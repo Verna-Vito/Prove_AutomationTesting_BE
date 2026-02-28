@@ -1,0 +1,145 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="fca9ff3e-654c-4f44-af25-c4f934ccd88a" name="verna@VITO 2026-03-01 00:13:39" runUser="VITO\verna" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-03-01T00:13:39.0245750+01:00" queuing="2026-03-01T00:13:39.0245751+01:00" start="2026-03-01T00:13:38.1971156+01:00" finish="2026-03-01T00:13:39.0346201+01:00" />
+  <TestSettings name="default" id="87b0ec7d-e5b7-4e46-b2bb-79f8a1257d17">
+    <Deployment runDeploymentRoot="verna_VITO_2026-03-01_00_13_39" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="d711c304-23eb-4fdb-a464-0cfed8bbff2d" testId="97aeb0af-0406-33b1-f971-e13be91f61fe" testName="Start_should_fail_example_to_show_allure_attachments" computerName="VITO" duration="00:00:00.1098130" startTime="2026-03-01T00:13:38.6864884+01:00" endTime="2026-03-01T00:13:38.7962626+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d711c304-23eb-4fdb-a464-0cfed8bbff2d">
+      <Output>
+        <ErrorInfo>
+          <Message>  Fail voluto: il mock torna 200.&#xD;
+Assert.That(result.StatusCode, Is.EqualTo(201))&#xD;
+  Expected: 201&#xD;
+  But was:  200&#xD;
+</Message>
+          <StackTrace>   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests.&lt;&gt;c__DisplayClass5_0.&lt;Start_should_fail_example_to_show_allure_attachments&gt;b__0() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_200_Tests.cs:line 141&#xD;
+   at Allure.Net.Commons.AllureApi.&lt;&gt;c__DisplayClass42_0.&lt;Step&gt;b__0()&#xD;
+   at Allure.Net.Commons.AllureApi.ExecuteAction[T](String name, Action`1 start, Func`1 action, Action`1 resolve)&#xD;
+   at Allure.Net.Commons.AllureApi.ExecuteStep[T](String name, Func`1 action)&#xD;
+   at Allure.Net.Commons.AllureApi.Step(String name, Action action)&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests.Start_should_fail_example_to_show_allure_attachments() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_200_Tests.cs:line 139&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.GetResult()&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](TestExecutionContext context, Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(TestExecutionContext context, Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.BeforeAndAfterTestCommand.&lt;&gt;c__DisplayClass1_0.&lt;Execute&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.Commands.DelegatingTestCommand.RunTestMethodInThreadAbortSafeZone(TestExecutionContext context, Action action)&#xD;
+
+1)    at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests.&lt;&gt;c__DisplayClass5_0.&lt;Start_should_fail_example_to_show_allure_attachments&gt;b__0() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_200_Tests.cs:line 141&#xD;
+   at Allure.Net.Commons.AllureApi.&lt;&gt;c__DisplayClass42_0.&lt;Step&gt;b__0()&#xD;
+   at Allure.Net.Commons.AllureApi.ExecuteAction[T](String name, Action`1 start, Func`1 action, Action`1 resolve)&#xD;
+   at Allure.Net.Commons.AllureApi.ExecuteStep[T](String name, Func`1 action)&#xD;
+   at Allure.Net.Commons.AllureApi.Step(String name, Action action)&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests.Start_should_fail_example_to_show_allure_attachments() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_200_Tests.cs:line 139&#xD;
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine&amp; stateMachine)&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests.Start_should_fail_example_to_show_allure_attachments()&#xD;
+
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="1444c170-f8f4-402a-b9c9-06de5f6baaf0" testId="8e3ed94b-f8a1-86d7-c1ef-ec1a679c3b09" testName="Start_should_return_409_when_user_already_started_onboarding" computerName="VITO" duration="00:00:00.0019410" startTime="2026-03-01T00:13:38.8083497+01:00" endTime="2026-03-01T00:13:38.8102901+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1444c170-f8f4-402a-b9c9-06de5f6baaf0" />
+    <UnitTestResult executionId="ebba8b6e-ac22-422c-a645-59eb1aad0285" testId="1048c35b-dba0-091d-064e-07562b8393b7" testName="Start_should_return_400_when_email_is_missing" computerName="VITO" duration="00:00:00.0036500" startTime="2026-03-01T00:13:38.8046896+01:00" endTime="2026-03-01T00:13:38.8083397+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ebba8b6e-ac22-422c-a645-59eb1aad0285" />
+    <UnitTestResult executionId="3a496ec2-f452-4b86-a045-3e9023309978" testId="0a67fc4c-89cc-9693-8e64-f1718e61063d" testName="Should_Return_401_On_Expired_Token" computerName="VITO" duration="00:00:00.1262500" startTime="2026-03-01T00:13:38.8128366+01:00" endTime="2026-03-01T00:13:38.9390859+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a496ec2-f452-4b86-a045-3e9023309978">
+      <Output>
+        <ErrorInfo>
+          <Message>System.Net.Http.HttpRequestException : Il nome richiesto è valido, non sono stati trovati dati del tipo richiesto. (qa.api.example.com:443)&#xD;
+  ----&gt; System.Net.Sockets.SocketException : Il nome richiesto è valido, non sono stati trovati dati del tipo richiesto.</Message>
+          <StackTrace>   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.ConnectAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.CreateHttp11ConnectionAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.AddHttp11ConnectionAsync(QueueItem queueItem)&#xD;
+   at System.Threading.Tasks.TaskCompletionSourceWithCancellation`1.WaitWithCancellationAsync(CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpClient.&lt;SendAsync&gt;g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_401_Tests.Should_Return_401_On_Expired_Token() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_401_Tests.cs:line 32&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_401_Tests.Should_Return_401_On_Expired_Token() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_401_Tests.cs:line 38&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.BlockUntilCompleted()&#xD;
+   at NUnit.Framework.Internal.MessagePumpStrategy.NoMessagePumpStrategy.WaitForCompletion(AwaitAdapter awaiter)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](TestExecutionContext context, Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(TestExecutionContext context, Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.BeforeAndAfterTestCommand.&lt;&gt;c__DisplayClass1_0.&lt;Execute&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.Commands.DelegatingTestCommand.RunTestMethodInThreadAbortSafeZone(TestExecutionContext context, Action action)&#xD;
+--SocketException&#xD;
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)&#xD;
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)&#xD;
+   at System.Net.Sockets.Socket.&lt;ConnectAsync&gt;g__WaitForConnectWithCancellation|285_0(AwaitableSocketAsyncEventArgs saea, ValueTask connectTask, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
+1)    at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.ConnectAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.CreateHttp11ConnectionAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.AddHttp11ConnectionAsync(QueueItem queueItem)&#xD;
+   at System.Threading.Tasks.TaskCompletionSourceWithCancellation`1.WaitWithCancellationAsync(CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpClient.&lt;SendAsync&gt;g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_401_Tests.Should_Return_401_On_Expired_Token() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_401_Tests.cs:line 32&#xD;
+   at Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_401_Tests.Should_Return_401_On_Expired_Token() in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\Features\Onboarding\Start\Onboarding_401_Tests.cs:line 38&#xD;
+   at NUnit.Framework.Internal.TaskAwaitAdapter.GenericAdapter`1.BlockUntilCompleted()&#xD;
+   at NUnit.Framework.Internal.MessagePumpStrategy.NoMessagePumpStrategy.WaitForCompletion(AwaitAdapter awaiter)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await[TResult](TestExecutionContext context, Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.AsyncToSyncAdapter.Await(TestExecutionContext context, Func`1 invoke)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.RunTestMethod(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.TestMethodCommand.Execute(TestExecutionContext context)&#xD;
+   at NUnit.Framework.Internal.Commands.BeforeAndAfterTestCommand.&lt;&gt;c__DisplayClass1_0.&lt;Execute&gt;b__0()&#xD;
+   at NUnit.Framework.Internal.Commands.DelegatingTestCommand.RunTestMethodInThreadAbortSafeZone(TestExecutionContext context, Action action)&#xD;
+--SocketException&#xD;
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)&#xD;
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)&#xD;
+   at System.Net.Sockets.Socket.&lt;ConnectAsync&gt;g__WaitForConnectWithCancellation|285_0(AwaitableSocketAsyncEventArgs saea, ValueTask connectTask, CancellationToken cancellationToken)&#xD;
+   at System.Net.Http.HttpConnectionPool.ConnectToTcpHostAsync(String host, Int32 port, HttpRequestMessage initialRequest, Boolean async, CancellationToken cancellationToken)
+</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="fcd3e75d-9ac0-4249-84f7-fa529df18ceb" testId="6411aa88-7a65-e081-7294-7af8984321c9" testName="Start_should_return_200_when_payload_is_valid" computerName="VITO" duration="00:00:00.0077390" startTime="2026-03-01T00:13:38.7969319+01:00" endTime="2026-03-01T00:13:38.8046708+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fcd3e75d-9ac0-4249-84f7-fa529df18ceb" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Start_should_fail_example_to_show_allure_attachments" storage="c:\users\verna\desktop\prove_automationtesting_be\prove.automationtesting.be\prove.automationtesting.be\bin\release\net8.0\prove.automationtesting.be.dll" id="97aeb0af-0406-33b1-f971-e13be91f61fe">
+      <Execution id="d711c304-23eb-4fdb-a464-0cfed8bbff2d" />
+      <TestMethod codeBase="C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\bin\Release\net8.0\Prove.AutomationTesting.BE.dll" adapterTypeName="executor://nunit3testexecutor/" className="Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests" name="Start_should_fail_example_to_show_allure_attachments" />
+    </UnitTest>
+    <UnitTest name="Should_Return_401_On_Expired_Token" storage="c:\users\verna\desktop\prove_automationtesting_be\prove.automationtesting.be\prove.automationtesting.be\bin\release\net8.0\prove.automationtesting.be.dll" id="0a67fc4c-89cc-9693-8e64-f1718e61063d">
+      <Execution id="3a496ec2-f452-4b86-a045-3e9023309978" />
+      <TestMethod codeBase="C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\bin\Release\net8.0\Prove.AutomationTesting.BE.dll" adapterTypeName="executor://nunit3testexecutor/" className="Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_401_Tests" name="Should_Return_401_On_Expired_Token" />
+    </UnitTest>
+    <UnitTest name="Start_should_return_400_when_email_is_missing" storage="c:\users\verna\desktop\prove_automationtesting_be\prove.automationtesting.be\prove.automationtesting.be\bin\release\net8.0\prove.automationtesting.be.dll" id="1048c35b-dba0-091d-064e-07562b8393b7">
+      <Execution id="ebba8b6e-ac22-422c-a645-59eb1aad0285" />
+      <TestMethod codeBase="C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\bin\Release\net8.0\Prove.AutomationTesting.BE.dll" adapterTypeName="executor://nunit3testexecutor/" className="Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests" name="Start_should_return_400_when_email_is_missing" />
+    </UnitTest>
+    <UnitTest name="Start_should_return_409_when_user_already_started_onboarding" storage="c:\users\verna\desktop\prove_automationtesting_be\prove.automationtesting.be\prove.automationtesting.be\bin\release\net8.0\prove.automationtesting.be.dll" id="8e3ed94b-f8a1-86d7-c1ef-ec1a679c3b09">
+      <Execution id="1444c170-f8f4-402a-b9c9-06de5f6baaf0" />
+      <TestMethod codeBase="C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\bin\Release\net8.0\Prove.AutomationTesting.BE.dll" adapterTypeName="executor://nunit3testexecutor/" className="Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests" name="Start_should_return_409_when_user_already_started_onboarding" />
+    </UnitTest>
+    <UnitTest name="Start_should_return_200_when_payload_is_valid" storage="c:\users\verna\desktop\prove_automationtesting_be\prove.automationtesting.be\prove.automationtesting.be\bin\release\net8.0\prove.automationtesting.be.dll" id="6411aa88-7a65-e081-7294-7af8984321c9">
+      <Execution id="fcd3e75d-9ac0-4249-84f7-fa529df18ceb" />
+      <TestMethod codeBase="C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\bin\Release\net8.0\Prove.AutomationTesting.BE.dll" adapterTypeName="executor://nunit3testexecutor/" className="Prove.AutomationTesting.BE.Features.Onboarding.Start.Onboarding_200_Tests" name="Start_should_return_200_when_payload_is_valid" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="97aeb0af-0406-33b1-f971-e13be91f61fe" executionId="d711c304-23eb-4fdb-a464-0cfed8bbff2d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8e3ed94b-f8a1-86d7-c1ef-ec1a679c3b09" executionId="1444c170-f8f4-402a-b9c9-06de5f6baaf0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1048c35b-dba0-091d-064e-07562b8393b7" executionId="ebba8b6e-ac22-422c-a645-59eb1aad0285" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0a67fc4c-89cc-9693-8e64-f1718e61063d" executionId="3a496ec2-f452-4b86-a045-3e9023309978" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6411aa88-7a65-e081-7294-7af8984321c9" executionId="fcd3e75d-9ac0-4249-84f7-fa529df18ceb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Risultati non in elenco" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Tutti i risultati caricati" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="5" executed="5" passed="3" failed="2" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 6.1.0.0: Test execution started&#xD;
+Running all tests in C:\Users\verna\Desktop\Prove_AutomationTesting_BE\Prove.AutomationTesting.BE\Prove.AutomationTesting.BE\bin\Release\net8.0\Prove.AutomationTesting.BE.dll&#xD;
+   NUnit3TestExecutor discovered 5 of 5 NUnit test cases using Current Discovery mode, Non-Explicit run&#xD;
+NUnit Adapter 6.1.0.0: Test execution complete&#xD;
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>
