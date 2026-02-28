@@ -31,7 +31,7 @@ public class Onboarding_200_Tests
     }
 
     [Test]
-    [AllureIssue("14")] // se vuoi usare template {issue}; qui la PBI 14
+    [AllureIssue("5")] // se vuoi usare template {issue}; qui la PBI 14
     [AllureSeverity(SeverityLevel.critical)]
     public async Task Start_should_return_200_when_payload_is_valid()
     {
