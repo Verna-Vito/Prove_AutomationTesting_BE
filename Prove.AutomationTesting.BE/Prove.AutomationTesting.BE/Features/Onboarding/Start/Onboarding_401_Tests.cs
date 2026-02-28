@@ -1,16 +1,20 @@
-﻿using System.Net;
-using System.Net.Http.Headers;
-using NUnit.Framework;
+﻿using Allure.NUnit;
+using ApiTests.Features.Onboarding;
 using ApiTests.Infrastructure;
+using NUnit.Framework;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
-namespace ApiTests.Features.Onboarding;
+namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
 
+[AllureNUnit]
 [TestFixture]
 public class Onboarding_401_Tests : OnboardingApiTestBase
 {
     [Test]
+    [Property("PBI", "12346")]
     public async Task Should_Return_401_On_Expired_Token()
     {
         var expired = Settings.TestCases.Auth.ExpiredToken;

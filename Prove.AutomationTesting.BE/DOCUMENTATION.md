@@ -13,6 +13,144 @@ Fornire un framework robusto e modulare per testare le API backend, con:
 
 ---
 
+## 🏛️ Architettura dei Namespaces
+
+### Descrizione dei Namespaces Principali
+
+| Namespace | Livello | Scopo | Contenuto |
+|-----------|---------|-------|----------|
+| `ApiTests.Infrastructure` | 0 (Root) | Base per tutti i test | `ApiTestBase`, `TestSettings`, `TestConfigLoader`, `TestArtifacts` |
+| `ApiTests.Infrastructure.Utilities` | 1 | Helper e utility comuni | `ApiHelper`, `ApiHelperExtensions`, `ResponseValidator` |
+| `ApiTests.Infrastructure.State` | 1 | Gestione dello stato persistente | `RunState`, `RunStateModels`, `JsonFileStateStore`, `FileLock` |
+| `ApiTests.Features.Onboarding` | 1 | Feature Onboarding | `OnboardingApiTestBase`, `Onboarding_200_Tests`, `Onboarding_401_Tests` |
+| `ApiTests.Features.Onboarding.Examples` | 2 | Esempi di utilizzo | `ApiHelper_UsageExamples` |
+
+---
+
+## Diagramma Dipendenze dei Package
+
+Visualizzazione delle relazioni e dipendenze tra i package del progetto:
+
+```mermaid
+graph TB
+    subgraph Features["Features"]
+        Onboarding["Features.Onboarding<br/>OnboardingApiTestBase<br/>Onboarding_200_Tests<br/>Onboarding_401_Tests"]
+        OnboardingExamples["Features.Onboarding.Examples<br/>ApiHelper_UsageExamples"]
+        Onboarding --> OnboardingExamples
+    end
+
+    subgraph Infrastructure["Infrastructure"]
+        Core["Infrastructure<br/>ApiTestBase<br/>TestSettings<br/>TestConfigLoader<br/>TestArtifacts"]
+
+        subgraph Utilities["Utilities"]
+            ApiHelper["Infrastructure.Utilities<br/>ApiHelper<br/>ApiHelperExtensions<br/>ResponseValidator"]
+        end
+
+        subgraph State["State"]
+            StateModels["Infrastructure.State<br/>RunState<br/>RunStateModels<br/>JsonFileStateStore<br/>FileLock"]
+        end
+
+        Core --> Utilities
+        Core --> State
+    end
+
+    subgraph External["External Dependencies"]
+        NUnit["NUnit Framework<br/>TestFixture<br/>Test Attributes"]
+        HttpClient["System.Net.Http<br/>HttpClient<br/>HttpResponseMessage"]
+        JsonSerialization["System.Text.Json<br/>Serialization"]
+        FileIO["System.IO<br/>File Operations"]
+    end
+
+    Onboarding --> Core
+    Onboarding --> ApiHelper
+    Onboarding --> StateModels
+
+    Core --> NUnit
+    ApiHelper --> HttpClient
+    ApiHelper --> JsonSerialization
+    StateModels --> FileIO
+    StateModels --> JsonSerialization
+
+    style Features fill:#e8f4f8,stroke:#0077a3,color:#003d5c
+    style Onboarding fill:#b3dce6,stroke:#0077a3,color:#003d5c
+    style OnboardingExamples fill:#b3dce6,stroke:#0077a3,color:#003d5c
+
+    style Infrastructure fill:#f0e8f8,stroke:#7030a0,color:#3d1f5c
+    style Core fill:#dcc9e8,stroke:#7030a0,color:#3d1f5c
+    style Utilities fill:#d4c7e8,stroke:#7030a0,color:#3d1f5c
+    style ApiHelper fill:#d4c7e8,stroke:#7030a0,color:#3d1f5c
+    style State fill:#d4c7e8,stroke:#7030a0,color:#3d1f5c
+    style StateModels fill:#d4c7e8,stroke:#7030a0,color:#3d1f5c
+
+    style External fill:#f8f0e8,stroke:#a07030,color:#5c3d1f
+    style NUnit fill:#e8dcc9,stroke:#a07030,color:#5c3d1f
+    style HttpClient fill:#e8dcc9,stroke:#a07030,color:#5c3d1f
+    style JsonSerialization fill:#e8dcc9,stroke:#a07030,color:#5c3d1f
+    style FileIO fill:#e8dcc9,stroke:#a07030,color:#5c3d1f
+```
+
+### Descrizione delle Dipendenze
+
+**Flusso di Dipendenza (basso → alto):**
+
+1. **Layer Esterno** (External Dependencies)
+   - NUnit Framework: Attributi e framework per i test
+   - System.Net.Http: Client HTTP e operazioni di rete
+   - System.Text.Json: Serializzazione/deserializzazione
+   - System.IO: Operazioni su file
+
+2. **Layer Infrastruttura** (Infrastructure)
+   - **Core** (ApiTestBase): Base per tutti i test, dipende da Framework esterno
+   - **Utilities** (ApiHelper, ResponseValidator): Helper HTTP, dipende da HttpClient
+   - **State** (JsonFileStateStore, RunState): Persistenza, dipende da File I/O e JSON
+
+3. **Layer Feature** (Features)
+   - **Onboarding** (OnboardingApiTestBase, Test classes): Test specifici del dominio
+   - Dipende da tutto l'Infrastructure
+   - **Onboarding.Examples**: Esempi di utilizzo, dipende da Onboarding
+
+### Grafo di Uso
+
+```mermaid
+graph LR
+    Test["Test Class<br/>Onboarding_200_Tests"]
+
+    TestInherit["OnboardingApiTestBase"] 
+    BaseInherit["ApiTestBase"]
+
+    Helper["ApiHelper"]
+    Validator["ResponseValidator"]
+    Store["JsonFileStateStore"]
+    Settings["TestSettings"]
+
+    Test -->|eredita| TestInherit
+    TestInherit -->|eredita| BaseInherit
+
+    Test -->|usa| Helper
+    Test -->|usa| Validator
+    Test -->|usa| Store
+
+    BaseInherit -->|inizializza| Settings
+    BaseInherit -->|inizializza| Store
+    BaseInherit -->|fornisce| Helper
+
+    Helper -->|usa| Validator
+    Helper -->|legge| Settings
+
+    Store -->|gestisce| Settings
+
+    style Test fill:#e3f2fd,stroke:#1976d2,color:#0d47a1
+    style TestInherit fill:#bbdefb,stroke:#1976d2,color:#0d47a1
+    style BaseInherit fill:#90caf9,stroke:#1976d2,color:#0d47a1
+
+    style Helper fill:#c8e6c9,stroke:#388e3c,color:#1b5e20
+    style Validator fill:#fff9c4,stroke:#f57f17,color:#6d4c00
+    style Store fill:#f8bbd0,stroke:#c2185b,color:#880e4f
+    style Settings fill:#e1bee7,stroke:#7b1fa2,color:#4a148c
+```
+
+---
+
 ## 🏗️ Struttura del Progetto
 
 ```
