@@ -22,7 +22,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x" # cambia se usi net6/net7
+          dotnet-version: "8.0.x"
 
       - name: Setup Node (Allure CLI)
         uses: actions/setup-node@v4
@@ -75,8 +75,7 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      # Scarica la history dall'ultima run SUCCESS (stesso workflow + branch)
-      - name: Download previous Allure history (artifact: allure-history)
+      - name: Download previous Allure history (artifact allure-history)
         shell: pwsh
         if: always()
         env:
@@ -111,7 +110,6 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          # trova tutte le cartelle allure-results con contenuto
           $resultsDirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" |
                          Where-Object { (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0 } |
                          Select-Object -ExpandProperty FullName
@@ -124,7 +122,6 @@ jobs:
           Write-Host "Allure results directories:"
           $resultsDirs | ForEach-Object { Write-Host " - $_" }
 
-          # inject history se disponibile
           $prevHistory = ".\_prev\history"
           if (Test-Path $prevHistory) {
             foreach ($dir in $resultsDirs) {
@@ -137,9 +134,7 @@ jobs:
             Write-Host "No previous history to inject."
           }
 
-          # pulizia manuale
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
-
           allure generate $resultsDirs -o ".\allure-report"
 
       - name: Upload TRX results
@@ -164,8 +159,6 @@ jobs:
           name: allure-report
           path: ./allure-report/**
 
-      # ✅ Questo è il pezzo che “garantisce” la storia tra run:
-      # pubblichiamo SEMPRE la folder history come artifact dedicato.
       - name: Upload Allure History (for next runs)
         if: always()
         uses: actions/upload-artifact@v4
