@@ -1,0 +1,103 @@
+name: BE API Tests (NUnit) + Allure Report
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  test-and-allure:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x" # cambia se usi net6/net7
+
+      - name: Setup Node (for Allure CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Java (safe for Allure tooling)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # Esegue i test e salva TRX (utile sempre)
+      - name: Test (TRX + Allure Results)
+        run: >
+          dotnet test --configuration Release --no-build
+          --logger "trx;LogFileName=test_results.trx"
+          --results-directory ./TestResults
+
+      # Installa Allure CLI v3 via npm (come ce l'hai in locale)
+      - name: Install Allure CLI (npm)
+        run: |
+          npm i -g allure
+          allure --version
+          allure generate --help
+
+      # Cerca allure-results ovunque (molto utile perché spesso finisce sotto bin/Release/netX)
+      # e genera un unico report HTML.
+      - name: Generate Allure Report
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          # trova tutte le cartelle allure-results
+          $resultsDirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" |
+                         Where-Object { (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0 } |
+                         Select-Object -ExpandProperty FullName
+
+          if (-not $resultsDirs -or $resultsDirs.Count -eq 0) {
+            Write-Host "Nessuna cartella allure-results trovata con contenuto."
+            Write-Host "Tip: controlla che allureConfig.json venga copiato in output e che [AllureNUnit] sia presente."
+            exit 1
+          }
+
+          Write-Host "Trovate cartelle allure-results:"
+          $resultsDirs | ForEach-Object { Write-Host " - $_" }
+
+          # pulizia manuale (Allure 3 non ha --clean)
+          if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
+
+          # genera report da TUTTE le results dirs trovate
+          # (allure generate accetta più directory come argomenti)
+          allure generate $resultsDirs -o ".\allure-report"
+
+      # Upload artifacts anche se i test falliscono (così hai log/report per debug)
+      - name: Upload TRX results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testresults-trx
+          path: ./TestResults/**/*.trx
+
+      - name: Upload Allure Results (raw)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: |
+            **/allure-results/**
+
+      - name: Upload Allure Report (HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: ./allure-report/**
