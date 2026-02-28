@@ -31,6 +31,12 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
+      - name: Install Allure CLI (npm)
+        run: |
+          npm i -g allure
+          allure --version
+          allure generate --help
+
       - name: Locate solution or project
         id: locate
         shell: pwsh
@@ -59,16 +65,15 @@ jobs:
       - name: Build
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
+      # Nota: continue-on-error = true per NON bloccare il report Allure.
+      # Opzionale: escludi i test dimostrativi che falliscono apposta:
+      #   --filter "TestCategory!=DemoFail"
       - name: Test (TRX + Allure Results)
+        continue-on-error: true
         run: >
           dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
-
-      - name: Install Allure CLI (npm)
-        run: |
-          npm i -g allure
-          allure --version
 
       - name: Generate Allure Report
         shell: pwsh
@@ -83,9 +88,14 @@ jobs:
 
           if (-not $resultsDirs -or $resultsDirs.Count -eq 0) {
             Write-Host "Nessuna cartella allure-results trovata con contenuto."
-            exit 0  # non fallisco il job: magari i test sono falliti prima o Allure non era configurato
+            Write-Host "Controlla: [AllureNUnit] + allureConfig.json copiato in output."
+            exit 0
           }
 
+          Write-Host "Trovate cartelle allure-results:"
+          $resultsDirs | ForEach-Object { Write-Host " - $_" }
+
+          # pulizia manuale (Allure 3 non ha --clean)
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
 
           allure generate $resultsDirs -o ".\allure-report"
