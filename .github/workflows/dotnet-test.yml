@@ -89,10 +89,10 @@ jobs:
           $cfgPath = ".\allure-report.config.json"
           if (-not (Test-Path $cfgPath)) {
             @"
-{
-  "historyPath": "./.allure/history.jsonl"
-}
-"@ | Set-Content -Path $cfgPath -Encoding utf8
+            {
+              "historyPath": "./.allure/history.jsonl"
+            }
+            "@ | Set-Content -Path $cfgPath -Encoding utf8
 
             Write-Host "Created $cfgPath"
           } else {
