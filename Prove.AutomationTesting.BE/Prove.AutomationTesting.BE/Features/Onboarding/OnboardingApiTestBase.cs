@@ -11,8 +11,6 @@ namespace ApiTests.Features.Onboarding;
 /// Base specifica per onboarding.
 /// Qui: Accept-Language, DeviceId, eventuali header comuni onboarding.
 /// </summary>
-[AllureNUnit]
-[TestFixture]
 [AllureSuite("Onboarding /start")]
 [AllureEpic("BE E2E")]
 [AllureFeature("Onboarding")]

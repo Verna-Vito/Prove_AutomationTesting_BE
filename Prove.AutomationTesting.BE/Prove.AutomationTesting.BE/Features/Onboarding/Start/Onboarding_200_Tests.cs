@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 
 namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
 
+[AllureNUnit]
+[TestFixture]
 [Category("Validation Test")]
 public class Onboarding_200_Tests
 {
