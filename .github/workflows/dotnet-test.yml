@@ -75,6 +75,7 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
+      # ✅ Sempre: prende la run precedente (qualsiasi stato) e scarica allure-history
       - name: Download previous Allure history (artifact allure-history)
         shell: pwsh
         if: always()
@@ -85,23 +86,36 @@ jobs:
 
           $wf = "${{ github.workflow }}"
           $branch = "${{ github.ref_name }}"
+          $currentRunId = [int]"${{ github.run_id }}"
 
-          Write-Host "Looking for last successful run of workflow '$wf' on branch '$branch'..."
-          $runId = (gh run list --workflow "$wf" --branch "$branch" --status success --limit 1 --json databaseId -q ".[0].databaseId")
+          Write-Host "Finding previous run (any status) of workflow '$wf' on branch '$branch' (excluding current run_id=$currentRunId)..."
 
-          if (-not $runId) {
-            Write-Host "No previous successful run found. History will be skipped."
+          $runs = gh run list --workflow "$wf" --branch "$branch" --limit 20 --json databaseId -q ".[] | .databaseId"
+          if (-not $runs) {
+            Write-Host "No runs found. History will be skipped."
             exit 0
           }
 
-          Write-Host "Downloading allure-history artifact from runId=$runId ..."
+          $prevRunId = $null
+          foreach ($id in $runs) {
+            if ([int]$id -ne $currentRunId) { $prevRunId = $id; break }
+          }
+
+          if (-not $prevRunId) {
+            Write-Host "No previous run found (only current run). History will be skipped."
+            exit 0
+          }
+
+          Write-Host "Downloading allure-history artifact from prevRunId=$prevRunId ..."
           New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
-          gh run download $runId -n "allure-history" -D ".\_prev" | Out-Null
+
+          # Se l'artifact non esiste in quella run, non facciamo fallire la pipeline
+          gh run download $prevRunId -n "allure-history" -D ".\_prev" 2>$null | Out-Null
 
           if (Test-Path ".\_prev\history") {
             Write-Host "Previous history folder found: .\_prev\history"
           } else {
-            Write-Host "No history folder inside previous allure-history artifact. Skipping."
+            Write-Host "No history folder found in downloaded artifact. Skipping."
           }
 
       - name: Generate Allure Report (inject history)
@@ -137,6 +151,7 @@ jobs:
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
           allure generate $resultsDirs -o ".\allure-report"
 
+      # ✅ Forza sempre la cartella history, così l'artifact non è mai vuoto
       - name: Ensure Allure history folder exists
         shell: pwsh
         if: always()
