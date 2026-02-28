@@ -137,6 +137,22 @@ jobs:
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
           allure generate $resultsDirs -o ".\allure-report"
 
+      - name: Ensure Allure history folder exists
+        shell: pwsh
+        if: always()
+        run: |
+          $ErrorActionPreference = "Stop"
+          $history = ".\allure-report\history"
+
+          New-Item -ItemType Directory -Force -Path $history | Out-Null
+
+          $placeholder = Join-Path $history ".keep"
+          if (-not (Test-Path $placeholder)) {
+            Set-Content -Path $placeholder -Value "keep" -Encoding utf8
+          }
+
+          Write-Host "History folder ensured at: $history"
+
       - name: Upload TRX results
         if: always()
         uses: actions/upload-artifact@v4
