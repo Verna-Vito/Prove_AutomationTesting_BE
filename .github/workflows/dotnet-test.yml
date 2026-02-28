@@ -1,4 +1,4 @@
-name: BE API Tests (NUnit) + Allure Report
+name: BE API Tests (NUnit) + Allure Report (with History)
 
 on:
   workflow_dispatch:
@@ -31,11 +31,10 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
+      # Installo Allure subito, così esiste anche se i test falliscono
       - name: Install Allure CLI (npm)
         run: |
           npm i -g allure
-          allure --version
-          allure generate --help
 
       - name: Locate solution or project
         id: locate
@@ -65,9 +64,7 @@ jobs:
       - name: Build
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
-      # Nota: continue-on-error = true per NON bloccare il report Allure.
-      # Opzionale: escludi i test dimostrativi che falliscono apposta:
-      #   --filter "TestCategory!=DemoFail"
+      # Non blocca il job se falliscono i test: ci serve comunque report+artifacts
       - name: Test (TRX + Allure Results)
         continue-on-error: true
         run: >
@@ -75,7 +72,38 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      - name: Generate Allure Report
+      # Scarica l'artifact "allure-report" dall'ultima run SUCCESS (stesso workflow + stesso branch)
+      # e prende la folder history per i trend.
+      - name: Download previous Allure history (last successful run)
+        shell: pwsh
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          $wf = "${{ github.workflow }}"
+          $branch = "${{ github.ref_name }}"
+
+          Write-Host "Looking for last successful run of workflow '$wf' on branch '$branch'..."
+          $runId = (gh run list --workflow "$wf" --branch "$branch" --status success --limit 1 --json databaseId -q ".[0].databaseId")
+
+          if (-not $runId) {
+            Write-Host "No previous successful run found. History will be skipped."
+            exit 0
+          }
+
+          Write-Host "Downloading allure-report artifact from runId=$runId ..."
+          New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
+          gh run download $runId -n "allure-report" -D ".\_prev" | Out-Null
+
+          if (Test-Path ".\_prev\history") {
+            Write-Host "Previous history folder found: .\_prev\history"
+          } else {
+            Write-Host "No history folder inside previous allure-report artifact. Skipping."
+          }
+
+      - name: Generate Allure Report (inject history)
         shell: pwsh
         if: always()
         run: |
@@ -87,17 +115,30 @@ jobs:
                          Select-Object -ExpandProperty FullName
 
           if (-not $resultsDirs -or $resultsDirs.Count -eq 0) {
-            Write-Host "Nessuna cartella allure-results trovata con contenuto."
-            Write-Host "Controlla: [AllureNUnit] + allureConfig.json copiato in output."
+            Write-Host "No allure-results with content found. Report will not be generated."
             exit 0
           }
 
-          Write-Host "Trovate cartelle allure-results:"
+          Write-Host "Allure results directories:"
           $resultsDirs | ForEach-Object { Write-Host " - $_" }
+
+          # inject history se disponibile
+          $prevHistory = ".\_prev\history"
+          if (Test-Path $prevHistory) {
+            foreach ($dir in $resultsDirs) {
+              $dest = Join-Path $dir "history"
+              if (Test-Path $dest) { Remove-Item -Recurse -Force $dest }
+              Copy-Item -Recurse -Force $prevHistory $dest
+              Write-Host "Injected history into: $dest"
+            }
+          } else {
+            Write-Host "No previous history to inject."
+          }
 
           # pulizia manuale (Allure 3 non ha --clean)
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
 
+          # genera report (accetta anche più results dirs)
           allure generate $resultsDirs -o ".\allure-report"
 
       - name: Upload TRX results
