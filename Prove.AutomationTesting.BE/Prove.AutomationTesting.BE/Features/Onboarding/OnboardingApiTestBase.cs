@@ -1,7 +1,9 @@
-﻿using System.Net.Http.Headers;
-using NUnit.Framework;
+﻿using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using ApiTests.Infrastructure;
+using NUnit.Framework;
 using System;
+using System.Net.Http.Headers;
 
 namespace ApiTests.Features.Onboarding;
 
@@ -9,6 +11,14 @@ namespace ApiTests.Features.Onboarding;
 /// Base specifica per onboarding.
 /// Qui: Accept-Language, DeviceId, eventuali header comuni onboarding.
 /// </summary>
+[AllureNUnit]
+[TestFixture]
+[AllureSuite("Onboarding /start")]
+[AllureEpic("BE E2E")]
+[AllureFeature("Onboarding")]
+[AllureStory("Start")]
+[AllureLink("PBI 14", "https://github.com/ESSE4/backend/issues/14")]
+[AllureTag("pbi:14", "onboarding", "start")]
 public abstract class OnboardingApiTestBase : ApiTestBase
 {
     protected string DeviceId = null!;

@@ -10,14 +10,6 @@ using System.Threading.Tasks;
 
 namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
 
-[AllureNUnit]
-[TestFixture]
-[AllureSuite("Onboarding /start")]
-[AllureEpic("BE E2E")]
-[AllureFeature("Onboarding")]
-[AllureStory("Start")]
-[AllureLink("PBI 14", "https://github.com/ESSE4/backend/issues/14")]
-[AllureTag("pbi:14", "onboarding", "start")]
 [Category("Validation Test")]
 public class Onboarding_200_Tests
 {
