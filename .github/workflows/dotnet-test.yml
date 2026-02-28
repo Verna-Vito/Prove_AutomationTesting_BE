@@ -1,4 +1,4 @@
-name: BE API Tests (NUnit) + Allure Report (with History)
+name: BE API Tests (NUnit) + Allure Report (with Persistent History)
 
 on:
   workflow_dispatch:
@@ -7,7 +7,6 @@ on:
   pull_request:
     branches: [ "main", "dev", "master" ]
 
-# ✅ Soluzione 1: concedi i permessi al GITHUB_TOKEN per leggere le runs/artifacts di Actions
 permissions:
   actions: read
   contents: read
@@ -76,7 +75,8 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      - name: Download previous Allure history (last successful run)
+      # Scarica la history dall'ultima run SUCCESS (stesso workflow + branch)
+      - name: Download previous Allure history (artifact: allure-history)
         shell: pwsh
         if: always()
         env:
@@ -95,14 +95,14 @@ jobs:
             exit 0
           }
 
-          Write-Host "Downloading allure-report artifact from runId=$runId ..."
+          Write-Host "Downloading allure-history artifact from runId=$runId ..."
           New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
-          gh run download $runId -n "allure-report" -D ".\_prev" | Out-Null
+          gh run download $runId -n "allure-history" -D ".\_prev" | Out-Null
 
           if (Test-Path ".\_prev\history") {
             Write-Host "Previous history folder found: .\_prev\history"
           } else {
-            Write-Host "No history folder inside previous allure-report artifact. Skipping."
+            Write-Host "No history folder inside previous allure-history artifact. Skipping."
           }
 
       - name: Generate Allure Report (inject history)
@@ -111,6 +111,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
+          # trova tutte le cartelle allure-results con contenuto
           $resultsDirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" |
                          Where-Object { (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0 } |
                          Select-Object -ExpandProperty FullName
@@ -123,6 +124,7 @@ jobs:
           Write-Host "Allure results directories:"
           $resultsDirs | ForEach-Object { Write-Host " - $_" }
 
+          # inject history se disponibile
           $prevHistory = ".\_prev\history"
           if (Test-Path $prevHistory) {
             foreach ($dir in $resultsDirs) {
@@ -135,7 +137,9 @@ jobs:
             Write-Host "No previous history to inject."
           }
 
+          # pulizia manuale
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
+
           allure generate $resultsDirs -o ".\allure-report"
 
       - name: Upload TRX results
@@ -159,3 +163,12 @@ jobs:
         with:
           name: allure-report
           path: ./allure-report/**
+
+      # ✅ Questo è il pezzo che “garantisce” la storia tra run:
+      # pubblichiamo SEMPRE la folder history come artifact dedicato.
+      - name: Upload Allure History (for next runs)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-history
+          path: ./allure-report/history/**
