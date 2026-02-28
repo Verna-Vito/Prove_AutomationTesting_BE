@@ -22,7 +22,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x" # cambia se usi net6/net7
+          dotnet-version: "8.0.x"
 
       - name: Setup Node (Allure CLI)
         uses: actions/setup-node@v4
@@ -39,7 +39,6 @@ jobs:
         run: |
           npm i -g allure
           allure --version
-          allure generate --help
 
       - name: Locate solution or project
         id: locate
@@ -69,7 +68,6 @@ jobs:
       - name: Build
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
-      # Non blocca: vogliamo comunque report + artifacts anche quando i test falliscono
       - name: Test (TRX + Allure Results)
         continue-on-error: true
         run: >
@@ -77,7 +75,6 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      # Crea config CLI di Allure 3 per abilitare la history su file JSONL
       - name: Prepare Allure 3 CLI config (historyPath)
         shell: pwsh
         if: always()
@@ -88,18 +85,14 @@ jobs:
 
           $cfgPath = ".\allure-report.config.json"
           if (-not (Test-Path $cfgPath)) {
-            @"
-            {
-              "historyPath": "./.allure/history.jsonl"
-            }
-            "@ | Set-Content -Path $cfgPath -Encoding utf8
-
+            $cfgObj = @{ historyPath = "./.allure/history.jsonl" }
+            $json = $cfgObj | ConvertTo-Json -Depth 5
+            Set-Content -Path $cfgPath -Value $json -Encoding utf8
             Write-Host "Created $cfgPath"
           } else {
             Write-Host "Using existing $cfgPath"
           }
 
-      # Scarica SEMPRE la run precedente (qualsiasi stato) ed eventualmente recupera history.jsonl
       - name: Download previous Allure history file (history.jsonl)
         shell: pwsh
         if: always()
@@ -117,25 +110,13 @@ jobs:
           Write-Host "Finding previous run (any status) of workflow '$wf' on branch '$branch' (excluding current run_id=$currentRunId)..."
 
           $runs = gh run list --workflow "$wf" --branch "$branch" --limit 20 --json databaseId -q ".[] | .databaseId"
-          if (-not $runs) {
-            Write-Host "No runs found. Skipping history download."
-            exit 0
-          }
+          if (-not $runs) { Write-Host "No runs found. Skipping history download."; exit 0 }
 
           $prevRunId = $null
-          foreach ($id in $runs) {
-            if ([int]$id -ne $currentRunId) { $prevRunId = $id; break }
-          }
+          foreach ($id in $runs) { if ([int]$id -ne $currentRunId) { $prevRunId = $id; break } }
+          if (-not $prevRunId) { Write-Host "No previous run found. Skipping history download."; exit 0 }
 
-          if (-not $prevRunId) {
-            Write-Host "No previous run found (only current run). Skipping history download."
-            exit 0
-          }
-
-          Write-Host "Downloading artifact 'allure-history-file' from prevRunId=$prevRunId ..."
           New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
-
-          # Se l'artifact non esiste, non deve esplodere
           gh run download $prevRunId -n "allure-history-file" -D ".\_prev" 2>$null | Out-Null
 
           if (Test-Path ".\_prev\history.jsonl") {
@@ -160,15 +141,10 @@ jobs:
             exit 0
           }
 
-          Write-Host "Allure results directories:"
-          $resultsDirs | ForEach-Object { Write-Host " - $_" }
-
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
 
-          # ✅ Allure 3: la history viene gestita tramite historyPath nel file di config
           allure generate $resultsDirs --config ".\allure-report.config.json" -o ".\allure-report"
 
-      # Assicura che history.jsonl esista sempre, così l'artifact non è mai "vuoto"
       - name: Ensure history.jsonl exists
         shell: pwsh
         if: always()
@@ -177,7 +153,6 @@ jobs:
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
           $hist = ".\.allure\history.jsonl"
           if (-not (Test-Path $hist)) {
-            # file vuoto va benissimo
             New-Item -ItemType File -Force -Path $hist | Out-Null
             Write-Host "Created empty $hist"
           } else {
@@ -206,7 +181,6 @@ jobs:
           name: allure-report
           path: ./allure-report/**
 
-      # ✅ Questo è lo "stato" persistente tra run per Allure 3
       - name: Upload Allure history file (for next runs)
         if: always()
         uses: actions/upload-artifact@v4
