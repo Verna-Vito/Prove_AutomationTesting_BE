@@ -3,9 +3,14 @@ name: BE API Tests (NUnit) + Allure Report (with History)
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "master" ]
   pull_request:
-    branches: [ "main", "dev" ]
+    branches: [ "main", "dev", "master" ]
+
+# ✅ Soluzione 1: concedi i permessi al GITHUB_TOKEN per leggere le runs/artifacts di Actions
+permissions:
+  actions: read
+  contents: read
 
 jobs:
   test-and-allure:
@@ -31,10 +36,10 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # Installo Allure subito, così esiste anche se i test falliscono
       - name: Install Allure CLI (npm)
         run: |
           npm i -g allure
+          allure --version
 
       - name: Locate solution or project
         id: locate
@@ -64,7 +69,6 @@ jobs:
       - name: Build
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
-      # Non blocca il job se falliscono i test: ci serve comunque report+artifacts
       - name: Test (TRX + Allure Results)
         continue-on-error: true
         run: >
@@ -72,8 +76,6 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      # Scarica l'artifact "allure-report" dall'ultima run SUCCESS (stesso workflow + stesso branch)
-      # e prende la folder history per i trend.
       - name: Download previous Allure history (last successful run)
         shell: pwsh
         if: always()
@@ -109,7 +111,6 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
 
-          # trova tutte le cartelle allure-results con contenuto
           $resultsDirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" |
                          Where-Object { (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0 } |
                          Select-Object -ExpandProperty FullName
@@ -122,7 +123,6 @@ jobs:
           Write-Host "Allure results directories:"
           $resultsDirs | ForEach-Object { Write-Host " - $_" }
 
-          # inject history se disponibile
           $prevHistory = ".\_prev\history"
           if (Test-Path $prevHistory) {
             foreach ($dir in $resultsDirs) {
@@ -135,10 +135,7 @@ jobs:
             Write-Host "No previous history to inject."
           }
 
-          # pulizia manuale (Allure 3 non ha --clean)
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
-
-          # genera report (accetta anche più results dirs)
           allure generate $resultsDirs -o ".\allure-report"
 
       - name: Upload TRX results
