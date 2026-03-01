@@ -25,6 +25,9 @@ namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
 [TestFixture]
 public class Onboarding_400_Tests : OnboardingApiTestBase
 {
+    // --- MOCK: finto client BE (in reale sarebbe HttpClient)
+    private FakeOnboardingApiClient _api = null!;
+
     [Test]
     public async Task Should_Return_400_On_NoToken_Passed()
     {
