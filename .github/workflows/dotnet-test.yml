@@ -80,7 +80,6 @@ jobs:
         if: always()
         run: |
           $ErrorActionPreference = "Stop"
-
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
           $cfgPath = ".\allure-report.config.json"
@@ -100,12 +99,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Continue"
-
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
           $wf = "${{ github.workflow }}"
           $branch = "${{ github.ref_name }}"
-          $currentRunId = [int]"${{ github.run_id }}"
+          $currentRunId = "${{ github.run_id }}"
 
           Write-Host "Finding previous run (any status) of workflow '$wf' on branch '$branch' (excluding current run_id=$currentRunId)..."
 
@@ -113,7 +111,10 @@ jobs:
           if (-not $runs) { Write-Host "No runs found. Skipping history download."; exit 0 }
 
           $prevRunId = $null
-          foreach ($id in $runs) { if ([int]$id -ne $currentRunId) { $prevRunId = $id; break } }
+          foreach ($id in $runs) {
+            if ("$id" -ne $currentRunId) { $prevRunId = "$id"; break }
+          }
+
           if (-not $prevRunId) { Write-Host "No previous run found. Skipping history download."; exit 0 }
 
           New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
@@ -152,12 +153,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
           $hist = ".\.allure\history.jsonl"
-          if (-not (Test-Path $hist)) {
-            New-Item -ItemType File -Force -Path $hist | Out-Null
-            Write-Host "Created empty $hist"
-          } else {
-            Write-Host "History file exists: $hist"
-          }
+          if (-not (Test-Path $hist)) { New-Item -ItemType File -Force -Path $hist | Out-Null }
 
       - name: Upload TRX results
         if: always()
