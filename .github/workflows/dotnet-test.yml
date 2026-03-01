@@ -1,4 +1,4 @@
-name: BE API Tests (NUnit) + Allure 3 Report (Persistent History JSONL)
+name: BE API Tests (NUnit) + Allure 3 Report (History JSONL)
 
 on:
   workflow_dispatch:
@@ -68,6 +68,7 @@ jobs:
       - name: Build
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
+      # ✅ i test possono fallire: la pipeline deve andare avanti
       - name: Test (TRX + Allure Results)
         continue-on-error: true
         run: >
@@ -75,26 +76,23 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
+      # Da qui in poi: esegui SOLO se non è stata cancellata la run
       - name: Prepare Allure 3 CLI config (historyPath)
         shell: pwsh
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
           $cfgPath = ".\allure-report.config.json"
-          if (-not (Test-Path $cfgPath)) {
-            $cfgObj = @{ historyPath = "./.allure/history.jsonl" }
-            $json = $cfgObj | ConvertTo-Json -Depth 5
-            Set-Content -Path $cfgPath -Value $json -Encoding utf8
-            Write-Host "Created $cfgPath"
-          } else {
-            Write-Host "Using existing $cfgPath"
-          }
+          $cfgObj = @{ historyPath = "./.allure/history.jsonl" }
+          $json = $cfgObj | ConvertTo-Json -Depth 5
+          Set-Content -Path $cfgPath -Value $json -Encoding utf8
 
-      - name: Download previous Allure history file (history.jsonl)
+      # ✅ prende la history dalla run più recente che ce l'ha (qualsiasi stato), andando indietro
+      - name: Restore Allure history.jsonl from previous runs (search back)
         shell: pwsh
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -105,31 +103,30 @@ jobs:
           $branch = "${{ github.ref_name }}"
           $currentRunId = "${{ github.run_id }}"
 
-          Write-Host "Finding previous run (any status) of workflow '$wf' on branch '$branch' (excluding current run_id=$currentRunId)..."
+          Write-Host "Searching previous runs for artifact 'allure-history-file' (any status)..."
 
-          $runs = gh run list --workflow "$wf" --branch "$branch" --limit 20 --json databaseId -q ".[] | .databaseId"
-          if (-not $runs) { Write-Host "No runs found. Skipping history download."; exit 0 }
+          $runIds = gh run list --workflow "$wf" --branch "$branch" --limit 30 --json databaseId -q ".[] | .databaseId"
 
-          $prevRunId = $null
-          foreach ($id in $runs) {
-            if ("$id" -ne $currentRunId) { $prevRunId = "$id"; break }
+          foreach ($rid in $runIds) {
+            if ("$rid" -eq $currentRunId) { continue }
+
+            Remove-Item -Recurse -Force ".\_prev" -ErrorAction SilentlyContinue
+            New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
+
+            gh run download $rid -n "allure-history-file" -D ".\_prev" 2>$null | Out-Null
+
+            if (Test-Path ".\_prev\history.jsonl") {
+              Copy-Item -Force ".\_prev\history.jsonl" ".\.allure\history.jsonl"
+              Write-Host "✅ Restored history.jsonl from runId=$rid"
+              exit 0
+            }
           }
 
-          if (-not $prevRunId) { Write-Host "No previous run found. Skipping history download."; exit 0 }
-
-          New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
-          gh run download $prevRunId -n "allure-history-file" -D ".\_prev" 2>$null | Out-Null
-
-          if (Test-Path ".\_prev\history.jsonl") {
-            Copy-Item -Force ".\_prev\history.jsonl" ".\.allure\history.jsonl"
-            Write-Host "Restored .\.allure\history.jsonl from previous run."
-          } else {
-            Write-Host "No history.jsonl found in previous artifact."
-          }
+          Write-Host "No history.jsonl found in last 30 runs. Starting fresh."
 
       - name: Generate Allure Report (Allure 3 + historyPath)
         shell: pwsh
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
 
@@ -139,7 +136,7 @@ jobs:
 
           if (-not $resultsDirs -or $resultsDirs.Count -eq 0) {
             Write-Host "No allure-results with content found. Report will not be generated."
-            exit 0
+            exit 1
           }
 
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
@@ -148,22 +145,23 @@ jobs:
 
       - name: Ensure history.jsonl exists
         shell: pwsh
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
           $hist = ".\.allure\history.jsonl"
           if (-not (Test-Path $hist)) { New-Item -ItemType File -Force -Path $hist | Out-Null }
 
+      # ✅ Artifact sempre, anche se test falliti (ma NON se cancelled)
       - name: Upload TRX results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: testresults-trx
           path: ./TestResults/**/*.trx
 
       - name: Upload Allure Results (raw)
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-results
@@ -171,14 +169,14 @@ jobs:
             **/allure-results/**
 
       - name: Upload Allure Report (HTML)
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: ./allure-report/**
 
       - name: Upload Allure history file (for next runs)
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-history-file
