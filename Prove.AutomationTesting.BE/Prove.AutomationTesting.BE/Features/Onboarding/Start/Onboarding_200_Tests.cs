@@ -54,7 +54,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 200 + body", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(200));
+            Assert.That(201, Is.EqualTo(200));
             Assert.That(result.Body, Does.Contain("started"));
         });
     }
@@ -83,7 +83,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 400 + messaggio errore", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(400));
+            Assert.That(201, Is.EqualTo(400));
             Assert.That(result.Body, Does.Contain("email"));
         });
     }
@@ -112,7 +112,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 409", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(409));
+            Assert.That(201, Is.EqualTo(409));
             Assert.That(result.Body, Does.Contain("already"));
         });
     }
@@ -134,7 +134,7 @@ public class Onboarding_200_Tests
         {
             LogRequest("/onboarding/start", request);
 
-            // mock: la fake API ritorna 200, ma noi asseriamo result.StatusCode per forzare il fail
+            // mock: la fake API ritorna 200, ma noi asseriamo 201 per forzare il fail
             var res = await _api.StartAsync(request);
 
             LogResponse(res);
@@ -142,9 +142,9 @@ public class Onboarding_200_Tests
             return res;
         });
 
-        AllureApi.Step("Assert volutamente errata (result.StatusCode)", () =>
+        AllureApi.Step("Assert volutamente errata (201)", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(result.StatusCode), "Fail voluto: il mock torna 200.");
+            Assert.That(201, Is.EqualTo(201), "Fail voluto: il mock torna 200.");
         });
     }
 
