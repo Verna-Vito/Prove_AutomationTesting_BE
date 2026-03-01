@@ -8,7 +8,7 @@ on:
     branches: [ "main", "dev", "master" ]
 
 permissions:
-  actions: read
+  actions: write
   contents: read
 
 # ──────────────────────────────────────────────────────────────
@@ -37,16 +37,19 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
+          $base = (Get-Location).Path
           $sln = Get-ChildItem -Path . -Recurse -File -Filter *.sln | Select-Object -First 1
           if ($sln) {
-            "target=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            Write-Host "Using solution: $($sln.FullName)"
+            $rel = $sln.FullName.Substring($base.Length + 1).Replace("\", "/")
+            "target=$rel" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Using solution: $rel"
             exit 0
           }
           $csproj = Get-ChildItem -Path . -Recurse -File -Filter *.csproj | Select-Object -First 1
           if ($csproj) {
-            "target=$($csproj.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            Write-Host "Using project: $($csproj.FullName)"
+            $rel = $csproj.FullName.Substring($base.Length + 1).Replace("\", "/")
+            "target=$rel" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Using project: $rel"
             exit 0
           }
           throw "Nessun file .sln o .csproj trovato nel repository."
@@ -260,8 +263,22 @@ jobs:
           echo "   Pipeline completed"
           echo "========================================"
           echo "Artifacts produced:"
-          echo "  - testresults-trx      (TRX test results)"
-          echo "  - allure-results       (raw Allure results)"
           echo "  - allure-report        (HTML report)"
           echo "  - allure-history-file  (history.jsonl for next runs)"
           echo "========================================"
+
+      - name: Delete intermediate artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for name in source build-output allure-results testresults-trx; do
+            artifact_id=$(gh api \
+              "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq ".artifacts[] | select(.name==\"$name\") | .id")
+            if [ -n "$artifact_id" ]; then
+              gh api --method DELETE "repos/${{ github.repository }}/actions/artifacts/$artifact_id"
+              echo "✅ Deleted artifact: $name"
+            else
+              echo "⚠️ Artifact not found (skipped): $name"
+            fi
+          done
