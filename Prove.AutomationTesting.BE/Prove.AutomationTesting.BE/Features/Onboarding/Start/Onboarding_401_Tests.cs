@@ -1,4 +1,6 @@
-﻿using ApiTests.Features.Onboarding;
+﻿using Allure.NUnit;
+using Allure.NUnit.Attributes;
+using ApiTests.Features.Onboarding;
 using ApiTests.Infrastructure;
 using NUnit.Framework;
 using System.Net;
@@ -7,6 +9,15 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 
 namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
+
+[AllureNUnit]
+[AllureSuite("Onboarding /start")]
+[AllureEpic("BE E2E")]
+[AllureFeature("Onboarding")]
+[AllureStory("Start")]
+[AllureLink("PBI 14", "https://github.com/ESSE4/backend/issues/14")]
+[AllureTag("pbi:14", "onboarding", "start")]
+[TestFixture]
 public class Onboarding_401_Tests : OnboardingApiTestBase
 {
     [Test]
