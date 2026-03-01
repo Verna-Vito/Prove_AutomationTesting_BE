@@ -144,7 +144,7 @@ public class Onboarding_200_Tests
 
         AllureApi.Step("Assert volutamente errata (result.StatusCode)", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(result.StatusCode), "Fail voluto: il mock torna 200.");
+            Assert.That(400, Is.EqualTo(result.StatusCode), "Fail voluto: il mock torna 200.");
         });
     }
 
