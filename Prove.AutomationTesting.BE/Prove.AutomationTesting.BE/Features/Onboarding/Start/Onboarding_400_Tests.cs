@@ -28,6 +28,12 @@ public class Onboarding_400_Tests : OnboardingApiTestBase
     // --- MOCK: finto client BE (in reale sarebbe HttpClient)
     private FakeOnboardingApiClient _api = null!;
 
+    [SetUp]
+    public new void SetUp()
+    {
+        _api = new FakeOnboardingApiClient();
+    }
+
     [Test]
     public async Task Should_Return_400_On_NoToken_Passed()
     {
