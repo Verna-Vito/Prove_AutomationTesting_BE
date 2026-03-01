@@ -100,7 +100,7 @@ jobs:
 # ──────────────────────────────────────────────────────────────
   test:
     runs-on: windows-latest
-    needs: build
+    needs: [setup, build]
     continue-on-error: true
 
     steps:
