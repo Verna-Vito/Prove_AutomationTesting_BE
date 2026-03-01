@@ -118,11 +118,33 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
+      - name: Diagnostics (verify target + files)
+        shell: pwsh
+        run: |
+          $target = "${{ needs.setup.outputs.target }}"
+          Write-Host "=== TARGET VALUE: '$target' ==="
+          if ([string]::IsNullOrWhiteSpace($target)) {
+            throw "ERROR: target is empty!"
+          }
+          if (-not (Test-Path $target)) {
+            Write-Host "ERROR: target NOT FOUND at: $target"
+            Write-Host "--- .sln/.csproj files found ---"
+            Get-ChildItem -Recurse -File -Include *.sln,*.csproj | Select-Object FullName
+            throw "Target file not found."
+          }
+          Write-Host "OK target exists: $target"
+
       - name: Test (TRX + Allure Results)
-        run: >
-          dotnet test "${{ needs.setup.outputs.target }}" --configuration Release --no-build
-          --logger "trx;LogFileName=test_results.trx"
-          --results-directory ./TestResults
+        shell: pwsh
+        run: |
+          $target = "${{ needs.setup.outputs.target }}"
+          dotnet test $target --configuration Release --no-build `
+            --logger "trx;LogFileName=test_results.trx" `
+            --results-directory ./TestResults
+          Write-Host "--- TestResults ---"
+          Get-ChildItem -Recurse ./TestResults -ErrorAction SilentlyContinue | Select-Object FullName
+          Write-Host "--- allure-results ---"
+          Get-ChildItem -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue | Select-Object FullName
 
       - name: Upload TRX results
         if: ${{ !cancelled() }}
