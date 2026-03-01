@@ -20,8 +20,8 @@ namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
 [AllureEpic("BE Proviamo")]
 [AllureFeature("Registrazione")]
 [AllureStory("Start Onboarding")]
-[AllureLink("PBI 14", "https://github.com/ESSE4/backend/issues/14")]
-[AllureTag("pbi:14", "onboarding", "start")]
+[AllureLink("PBI 15", "https://github.com/ESSE4/backend/issues/15")]
+[AllureTag("pbi:15", "onboarding", "start")]
 [TestFixture]
 public class Onboarding_400_Tests : OnboardingApiTestBase
 {
