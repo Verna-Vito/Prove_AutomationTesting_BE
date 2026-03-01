@@ -11,9 +11,17 @@ permissions:
   actions: read
   contents: read
 
+# ──────────────────────────────────────────────────────────────
+# JOB 1 — SETUP
+# Individua il file .sln o .csproj e lo espone come output
+# per i job successivi. Carica il codice sorgente come artefatto.
+# ──────────────────────────────────────────────────────────────
 jobs:
-  test-and-allure:
+  setup:
     runs-on: windows-latest
+
+    outputs:
+      target: ${{ steps.locate.outputs.target }}
 
     steps:
       - name: Checkout
@@ -23,6 +31,130 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
+
+      - name: Locate solution or project
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $sln = Get-ChildItem -Path . -Recurse -File -Filter *.sln | Select-Object -First 1
+          if ($sln) {
+            "target=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Using solution: $($sln.FullName)"
+            exit 0
+          }
+          $csproj = Get-ChildItem -Path . -Recurse -File -Filter *.csproj | Select-Object -First 1
+          if ($csproj) {
+            "target=$($csproj.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Using project: $($csproj.FullName)"
+            exit 0
+          }
+          throw "Nessun file .sln o .csproj trovato nel repository."
+
+      - name: Upload source as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: .
+
+
+# ──────────────────────────────────────────────────────────────
+# JOB 2 — BUILD
+# Scarica il sorgente, esegue restore + build Release e
+# carica i binari compilati per il job di test.
+# ──────────────────────────────────────────────────────────────
+  build:
+    runs-on: windows-latest
+    needs: setup
+
+    steps:
+      - name: Download source artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: source
+          path: .
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore "${{ needs.setup.outputs.target }}"
+
+      - name: Build
+        run: dotnet build "${{ needs.setup.outputs.target }}" --configuration Release --no-restore
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: .
+
+
+# ──────────────────────────────────────────────────────────────
+# JOB 3 — TEST
+# Esegue i test NUnit producendo sia il file TRX sia i file
+# allure-results. continue-on-error: true permette ai job
+# successivi di girare anche in caso di test falliti.
+# ──────────────────────────────────────────────────────────────
+  test:
+    runs-on: windows-latest
+    needs: build
+    continue-on-error: true
+
+    steps:
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Test (TRX + Allure Results)
+        run: >
+          dotnet test "${{ needs.setup.outputs.target }}" --configuration Release --no-build
+          --logger "trx;LogFileName=test_results.trx"
+          --results-directory ./TestResults
+
+      - name: Upload TRX results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: testresults-trx
+          path: ./TestResults/**/*.trx
+
+      - name: Upload Allure Results (raw)
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: "**/allure-results/**"
+
+
+# ──────────────────────────────────────────────────────────────
+# JOB 4 — REPORT
+# Gira SEMPRE (anche se test è fallito) grazie a
+# if: always() + controllo su cancelled().
+# Ripristina la history JSONL dalle run precedenti,
+# genera il report Allure 3 e carica i file di history
+# aggiornati per le run future.
+# ──────────────────────────────────────────────────────────────
+  report:
+    runs-on: windows-latest
+    needs: test
+    if: ${{ always() && !cancelled() }}
+
+    steps:
+      - name: Download Allure Results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results
+          path: ./allure-results
 
       - name: Setup Node (Allure CLI)
         uses: actions/setup-node@v4
@@ -40,145 +172,96 @@ jobs:
           npm i -g allure
           allure --version
 
-      - name: Locate solution or project
-        id: locate
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-
-          $sln = Get-ChildItem -Path . -Recurse -File -Filter *.sln | Select-Object -First 1
-          if ($sln) {
-            "target=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            Write-Host "Using solution: $($sln.FullName)"
-            exit 0
-          }
-
-          $csproj = Get-ChildItem -Path . -Recurse -File -Filter *.csproj | Select-Object -First 1
-          if ($csproj) {
-            "target=$($csproj.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            Write-Host "Using project: $($csproj.FullName)"
-            exit 0
-          }
-
-          throw "Nessun file .sln o .csproj trovato nel repository."
-
-      - name: Restore
-        run: dotnet restore "${{ steps.locate.outputs.target }}"
-
-      - name: Build
-        run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
-
-      # ✅ i test possono fallire: la pipeline deve andare avanti
-      - name: Test (TRX + Allure Results)
-        continue-on-error: true
-        run: >
-          dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
-          --logger "trx;LogFileName=test_results.trx"
-          --results-directory ./TestResults
-
-      # Da qui in poi: esegui SOLO se non è stata cancellata la run
       - name: Prepare Allure 3 CLI config (historyPath)
         shell: pwsh
-        if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
-
           $cfgPath = ".\allure-report.config.json"
           $cfgObj = @{ historyPath = "./.allure/history.jsonl" }
           $json = $cfgObj | ConvertTo-Json -Depth 5
           Set-Content -Path $cfgPath -Value $json -Encoding utf8
 
-      # ✅ prende la history dalla run più recente che ce l'ha (qualsiasi stato), andando indietro
       - name: Restore Allure history.jsonl from previous runs (search back)
         shell: pwsh
-        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Continue"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
-
           $wf = "${{ github.workflow }}"
           $branch = "${{ github.ref_name }}"
           $currentRunId = "${{ github.run_id }}"
-
           Write-Host "Searching previous runs for artifact 'allure-history-file' (any status)..."
-
           $runIds = gh run list --workflow "$wf" --branch "$branch" --limit 30 --json databaseId -q ".[] | .databaseId"
-
           foreach ($rid in $runIds) {
             if ("$rid" -eq $currentRunId) { continue }
-
             Remove-Item -Recurse -Force ".\_prev" -ErrorAction SilentlyContinue
             New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
-
             gh run download $rid -n "allure-history-file" -D ".\_prev" 2>$null | Out-Null
-
             if (Test-Path ".\_prev\history.jsonl") {
               Copy-Item -Force ".\_prev\history.jsonl" ".\.allure\history.jsonl"
               Write-Host "✅ Restored history.jsonl from runId=$rid"
               exit 0
             }
           }
-
           Write-Host "No history.jsonl found in last 30 runs. Starting fresh."
 
       - name: Generate Allure Report (Allure 3 + historyPath)
         shell: pwsh
-        if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
-
           $resultsDirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" |
                          Where-Object { (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0 } |
                          Select-Object -ExpandProperty FullName
-
           if (-not $resultsDirs -or $resultsDirs.Count -eq 0) {
             Write-Host "No allure-results with content found. Report will not be generated."
             exit 1
           }
-
           if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
-
           allure generate $resultsDirs --config ".\allure-report.config.json" -o ".\allure-report"
 
       - name: Ensure history.jsonl exists
         shell: pwsh
-        if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
           $hist = ".\.allure\history.jsonl"
           if (-not (Test-Path $hist)) { New-Item -ItemType File -Force -Path $hist | Out-Null }
 
-      # ✅ Artifact sempre, anche se test falliti (ma NON se cancelled)
-      - name: Upload TRX results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: testresults-trx
-          path: ./TestResults/**/*.trx
-
-      - name: Upload Allure Results (raw)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: |
-            **/allure-results/**
-
       - name: Upload Allure Report (HTML)
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-report
           path: ./allure-report/**
 
       - name: Upload Allure history file (for next runs)
-        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: allure-history-file
           path: ./.allure/history.jsonl
           if-no-files-found: warn
+
+
+# ──────────────────────────────────────────────────────────────
+# JOB 5 — UPLOAD SUMMARY
+# Job finale che aggrega e mostra un riepilogo degli artefatti
+# prodotti. Gira sempre finché la pipeline non è cancellata.
+# ──────────────────────────────────────────────────────────────
+  upload-summary:
+    runs-on: ubuntu-latest
+    needs: [ test, report ]
+    if: ${{ always() && !cancelled() }}
+
+    steps:
+      - name: Summary
+        run: |
+          echo "========================================"
+          echo "   Pipeline completed"
+          echo "========================================"
+          echo "Artifacts produced:"
+          echo "  - testresults-trx      (TRX test results)"
+          echo "  - allure-results       (raw Allure results)"
+          echo "  - allure-report        (HTML report)"
+          echo "  - allure-history-file  (history.jsonl for next runs)"
+          echo "========================================"
