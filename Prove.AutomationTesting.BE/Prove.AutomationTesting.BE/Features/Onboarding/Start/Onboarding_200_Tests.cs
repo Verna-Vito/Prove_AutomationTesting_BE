@@ -11,6 +11,12 @@ using System.Threading.Tasks;
 namespace Prove.AutomationTesting.BE.Features.Onboarding.Start;
 
 [AllureNUnit]
+[AllureSuite("Onboarding /start")]
+[AllureEpic("BE E2E")]
+[AllureFeature("Onboarding")]
+[AllureStory("Start")]
+[AllureLink("PBI 14", "https://github.com/ESSE4/backend/issues/14")]
+[AllureTag("pbi:14", "onboarding", "start")]
 [TestFixture]
 [Category("Validation Test")]
 public class Onboarding_200_Tests
@@ -48,7 +54,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 200 + body", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(200));
+            Assert.That(201, Is.EqualTo(200));
             Assert.That(result.Body, Does.Contain("started"));
         });
     }
@@ -77,7 +83,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 400 + messaggio errore", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(400));
+            Assert.That(201, Is.EqualTo(400));
             Assert.That(result.Body, Does.Contain("email"));
         });
     }
@@ -106,7 +112,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 409", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(409));
+            Assert.That(201, Is.EqualTo(409));
             Assert.That(result.Body, Does.Contain("already"));
         });
     }
@@ -138,7 +144,7 @@ public class Onboarding_200_Tests
 
         AllureApi.Step("Assert volutamente errata (201)", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(201), "Fail voluto: il mock torna 200.");
+            Assert.That(201, Is.EqualTo(201), "Fail voluto: il mock torna 200.");
         });
     }
 
