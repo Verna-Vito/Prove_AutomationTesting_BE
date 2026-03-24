@@ -24,7 +24,7 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '22 22 * * *'    # ogni notte alle 2:00
+    - cron: '27 22 * * *'    # ogni notte alle 2:00
 
 permissions:
   actions: read
