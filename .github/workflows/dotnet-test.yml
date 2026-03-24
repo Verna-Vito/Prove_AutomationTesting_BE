@@ -1,15 +1,35 @@
-name: BE API Tests (NUnit) + Allure 3 Report (History JSONL)
+# ══════════════════════════════════════════════════════════════
+# PIPELINE DI TEST BACKEND — GitHub Actions
+# ══════════════════════════════════════════════════════════════
+#
+# Trigger:
+#   - Automatico: ad ogni push/merge su branch "main"
+#   - Schedulato: ogni notte alle 2:00
+#   - Manuale: workflow_dispatch
+#
+# Logica history:
+#   - Allure 3 con history.jsonl
+#   - Cerca la history nelle ultime 30 run (qualsiasi stato), andando a ritroso
+#   - Se non trovata, parte da zero senza errori
+#
+# Report:
+#   - Pubblicato su GitHub Pages (URL fisso, sempre aggiornato)
+#   - Artifact di backup: TRX, allure-results, allure-report, history.jsonl
+# ══════════════════════════════════════════════════════════════
+
+name: BE API Tests (NUnit) + Allure 3 Report + GitHub Pages
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "dev", "master" ]
-  pull_request:
-    branches: [ "main", "dev", "master" ]
+    branches: [ "main" ]
+  schedule:
+    - cron: '15 23 * * *'    # ogni notte alle 2:00
 
 permissions:
   actions: read
-  contents: read
+  contents: write      # necessario per push su gh-pages
+  pages: write         # necessario per GitHub Pages
 
 jobs:
   test-and-allure:
@@ -40,6 +60,7 @@ jobs:
           npm i -g allure
           allure --version
 
+      # ── Individua .sln o .csproj ─────────────
       - name: Locate solution or project
         id: locate
         shell: pwsh
@@ -62,13 +83,14 @@ jobs:
 
           throw "Nessun file .sln o .csproj trovato nel repository."
 
+      # ── Build ────────────────────────────────
       - name: Restore
         run: dotnet restore "${{ steps.locate.outputs.target }}"
 
       - name: Build
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
-      # ✅ i test possono fallire: la pipeline deve andare avanti
+      # ── Test ─────────────────────────────────
       - name: Test (TRX + Allure Results)
         continue-on-error: true
         run: >
@@ -76,7 +98,7 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      # Da qui in poi: esegui SOLO se non è stata cancellata la run
+      # ── Configura Allure 3 (historyPath) ─────
       - name: Prepare Allure 3 CLI config (historyPath)
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -84,12 +106,11 @@ jobs:
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
-          $cfgPath = ".\allure-report.config.json"
           $cfgObj = @{ historyPath = "./.allure/history.jsonl" }
           $json = $cfgObj | ConvertTo-Json -Depth 5
-          Set-Content -Path $cfgPath -Value $json -Encoding utf8
+          Set-Content -Path ".\allure-report.config.json" -Value $json -Encoding utf8
 
-      # ✅ prende la history dalla run più recente che ce l'ha (qualsiasi stato), andando indietro
+      # ── Recupera history.jsonl dalle run precedenti ──
       - name: Restore Allure history.jsonl from previous runs (search back)
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -124,6 +145,7 @@ jobs:
 
           Write-Host "No history.jsonl found in last 30 runs. Starting fresh."
 
+      # ── Genera report Allure 3 ────────────────
       - name: Generate Allure Report (Allure 3 + historyPath)
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -152,7 +174,7 @@ jobs:
           $hist = ".\.allure\history.jsonl"
           if (-not (Test-Path $hist)) { New-Item -ItemType File -Force -Path $hist | Out-Null }
 
-      # ✅ Artifact sempre, anche se test falliti (ma NON se cancelled)
+      # ── Artifact di backup ────────────────────
       - name: Upload TRX results
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -182,3 +204,58 @@ jobs:
           name: allure-history-file
           path: ./.allure/history.jsonl
           if-no-files-found: warn
+
+      # ── Deploy su GitHub Pages ────────────────
+      - name: Deploy report to GitHub Pages
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Actions"
+
+          $repo   = "${{ github.repository }}"
+          $branch = "gh-pages"
+          $remote = "https://x-access-token:$env:GH_TOKEN@github.com/$repo.git"
+
+          Write-Host "Clono branch $branch..."
+
+          try {
+            git clone --branch $branch --single-branch $remote gh-pages-deploy 2>&1
+          }
+          catch {
+            git clone $remote gh-pages-deploy
+          }
+
+          Set-Location gh-pages-deploy
+
+          # Crea branch orfano se non esiste
+          $branchExists = git branch -r | Select-String "origin/$branch"
+          if (-not $branchExists) {
+            Write-Host "Branch $branch non trovato, lo creo come orfano..."
+            git checkout --orphan $branch
+            git rm -rf . | Out-Null
+          }
+          else {
+            git checkout $branch
+            Get-ChildItem -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
+          }
+
+          # Copia il report generato
+          Copy-Item -Recurse -Force "..\allure-report\*" "."
+
+          # Commit e push
+          git add -A
+          $changes = git status --porcelain
+          if ($changes) {
+            git commit -m "Report Allure — Run ${{ github.run_number }} — ${{ github.event_name }}"
+            git push $remote $branch --force
+            Write-Host ""
+            Write-Host "✅ Report pubblicato su: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          }
+          else {
+            Write-Host "Nessuna modifica da pubblicare."
+          }
