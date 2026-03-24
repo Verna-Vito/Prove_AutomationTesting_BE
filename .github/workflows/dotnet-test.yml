@@ -22,9 +22,9 @@ name: BE API Tests (NUnit) + Allure 3 Report + GitHub Pages
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   schedule:
-    - cron: '20 22 * * *'    # ogni notte alle 2:00
+    - cron: '22 22 * * *'    # ogni notte alle 2:00
 
 permissions:
   actions: read
