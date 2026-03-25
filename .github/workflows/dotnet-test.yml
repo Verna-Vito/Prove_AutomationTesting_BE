@@ -3,18 +3,18 @@
 # ══════════════════════════════════════════════════════════════
 #
 # Trigger:
-#   - Automatico: ad ogni push/merge su branch "main"
-#   - Schedulato: ogni notte alle 2:00
+#   - Automatico: ad ogni push/merge su branch "master"
+#   - Schedulato: ogni notte alle 23:27 (ora italiana, ora solare)
 #   - Manuale: workflow_dispatch
 #
 # Logica history:
 #   - Allure 3 con history.jsonl
-#   - Cerca la history nelle ultime 30 run (qualsiasi stato), andando a ritroso
-#   - Se non trovata, parte da zero senza errori
+#   - Recuperata direttamente da GitHub Pages (no artifact)
+#   - Se non trovata (prima run), parte da zero senza errori
 #
 # Report:
 #   - Pubblicato su GitHub Pages (URL fisso, sempre aggiornato)
-#   - Artifact di backup: TRX, allure-results, allure-report, history.jsonl
+#   - Nessun artifact salvato su GitHub Actions
 # ══════════════════════════════════════════════════════════════
 
 name: BE API Tests (NUnit) + Allure 3 Report + GitHub Pages
@@ -24,7 +24,7 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '27 22 * * *'    # ogni notte alle 2:00
+    - cron: '15 19 * * *'    # 22:27 UTC = 23:27 ora italiana (ora solare)
 
 permissions:
   actions: read
@@ -110,40 +110,26 @@ jobs:
           $json = $cfgObj | ConvertTo-Json -Depth 5
           Set-Content -Path ".\allure-report.config.json" -Value $json -Encoding utf8
 
-      # ── Recupera history.jsonl dalle run precedenti ──
-      - name: Restore Allure history.jsonl from previous runs (search back)
+      # ── Recupera history.jsonl da GitHub Pages ──
+      - name: Restore Allure history.jsonl from GitHub Pages
         shell: pwsh
         if: ${{ !cancelled() }}
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = "Continue"
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
-          $wf = "${{ github.workflow }}"
-          $branch = "${{ github.ref_name }}"
-          $currentRunId = "${{ github.run_id }}"
+          $url = "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/.allure/history.jsonl"
 
-          Write-Host "Searching previous runs for artifact 'allure-history-file' (any status)..."
+          Write-Host "Recupero history.jsonl da: $url"
 
-          $runIds = gh run list --workflow "$wf" --branch "$branch" --limit 30 --json databaseId -q ".[] | .databaseId"
-
-          foreach ($rid in $runIds) {
-            if ("$rid" -eq $currentRunId) { continue }
-
-            Remove-Item -Recurse -Force ".\_prev" -ErrorAction SilentlyContinue
-            New-Item -ItemType Directory -Force -Path ".\_prev" | Out-Null
-
-            gh run download $rid -n "allure-history-file" -D ".\_prev" 2>$null | Out-Null
-
-            if (Test-Path ".\_prev\history.jsonl") {
-              Copy-Item -Force ".\_prev\history.jsonl" ".\.allure\history.jsonl"
-              Write-Host "✅ Restored history.jsonl from runId=$rid"
-              exit 0
-            }
+          try {
+            Invoke-WebRequest -Uri $url -OutFile ".\.allure\history.jsonl" -ErrorAction Stop
+            Write-Host "✅ history.jsonl recuperata da GitHub Pages"
           }
-
-          Write-Host "No history.jsonl found in last 30 runs. Starting fresh."
+          catch {
+            Write-Host "Nessuna history trovata su GitHub Pages (prima run o pagina non ancora pubblicata). Si parte da zero."
+            New-Item -ItemType File -Force -Path ".\.allure\history.jsonl" | Out-Null
+          }
 
       # ── Genera report Allure 3 ────────────────
       - name: Generate Allure Report (Allure 3 + historyPath)
@@ -174,36 +160,15 @@ jobs:
           $hist = ".\.allure\history.jsonl"
           if (-not (Test-Path $hist)) { New-Item -ItemType File -Force -Path $hist | Out-Null }
 
-      # ── Artifact di backup ────────────────────
-      - name: Upload TRX results
+      # ── Copia history.jsonl nel report per GitHub Pages ──────
+      # Così la prossima run può recuperarla direttamente dall'URL
+      - name: Include history.jsonl in report for GitHub Pages
+        shell: pwsh
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: testresults-trx
-          path: ./TestResults/**/*.trx
-
-      - name: Upload Allure Results (raw)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-results
-          path: |
-            **/allure-results/**
-
-      - name: Upload Allure Report (HTML)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-report
-          path: ./allure-report/**
-
-      - name: Upload Allure history file (for next runs)
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: allure-history-file
-          path: ./.allure/history.jsonl
-          if-no-files-found: warn
+        run: |
+          New-Item -ItemType Directory -Force -Path ".\allure-report\.allure" | Out-Null
+          Copy-Item -Force ".\.allure\history.jsonl" ".\allure-report\.allure\history.jsonl"
+          Write-Host "✅ history.jsonl inclusa nel report"
 
       # ── Deploy su GitHub Pages ────────────────
       - name: Deploy report to GitHub Pages
@@ -242,7 +207,7 @@ jobs:
             git checkout --orphan $branch
           }
 
-          # Copia il report generato
+          # Copia il report generato (include già .allure/history.jsonl)
           Copy-Item -Recurse -Force "..\allure-report\*" "."
 
           # Commit e push
