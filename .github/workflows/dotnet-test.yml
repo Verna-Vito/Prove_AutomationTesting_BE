@@ -264,7 +264,6 @@ jobs:
 
       - name: Generate Validation report
         shell: pwsh
-        if: ${{ steps.capture_validation.outputs.validation_found == 'true' }}
         run: |
           if (Test-Path ".\allure-report-validation") {
             Remove-Item -Recurse -Force ".\allure-report-validation"
@@ -273,7 +272,6 @@ jobs:
 
       - name: Generate Non Regression report
         shell: pwsh
-        if: ${{ steps.capture_nonreg.outputs.nonreg_found == 'true' }}
         run: |
           if (Test-Path ".\allure-report-non-regression") {
             Remove-Item -Recurse -Force ".\allure-report-non-regression"
