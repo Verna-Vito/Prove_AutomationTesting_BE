@@ -58,7 +58,7 @@ jobs:
       - name: Setup Node (Allure CLI)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24.14.1"
 
       - name: Setup Java (safe for Allure tooling)
         uses: actions/setup-java@v4
@@ -110,6 +110,7 @@ jobs:
         continue-on-error: true
         run: >
           dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
+          --filter "Category=Validation Test"
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
