@@ -131,7 +131,7 @@ jobs:
                 options = @{
                   reportName = $reportName
                   singleFile = $false
-                  reportLanguage = "it"
+                  reportLanguage = "en"
                 }
               }
             }
@@ -323,9 +323,7 @@ jobs:
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "## Allure Report"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ""
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Report: $reportUrl"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- History: $historyUrl"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Branch: ${{ github.ref_name }}"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Run number: ${{ github.run_number }}"
 
           Write-Host "Allure Report: $reportUrl"
-          Write-Host "History: $historyUrl"
