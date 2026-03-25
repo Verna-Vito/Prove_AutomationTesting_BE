@@ -29,7 +29,10 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '50 20 * * *'   # 23:27 in Italia quando è UTC+1; in estate slitta di 1h
+    - cron: '20 23 * * *'
+      timezone: 'Europe/Rome'
+    - cron: '25 23 * * *' 
+      timezone: 'Europe/Rome'
 
 permissions:
   actions: read
