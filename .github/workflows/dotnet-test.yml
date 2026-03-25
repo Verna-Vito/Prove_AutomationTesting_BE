@@ -4,7 +4,7 @@
 #
 # Trigger:
 #   - Automatico: ad ogni push/merge su branch "master"
-#   - Schedulato: ogni notte alle 23:27 (ora italiana, ora solare)
+#   - Schedulato: ogni notte alle 23:27 ora italiana
 #   - Manuale: workflow_dispatch
 #
 # Logica history:
@@ -15,6 +15,11 @@
 # Report:
 #   - Pubblicato su GitHub Pages (URL fisso, sempre aggiornato)
 #   - Nessun artifact salvato su GitHub Actions
+#
+# Note importanti:
+#   - Viene creato il file .nojekyll su gh-pages
+#   - Serve per pubblicare anche cartelle/file che iniziano con "."
+#   - Necessario per rendere accessibile /.allure/history.jsonl
 # ══════════════════════════════════════════════════════════════
 
 name: BE API Tests (NUnit) + Allure 3 Report + GitHub Pages
@@ -24,21 +29,23 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '15 19 * * *'    # 22:27 UTC = 23:27 ora italiana (ora solare)
+    - cron: '50 20 * * *'   # 23:27 in Italia quando è UTC+1; in estate slitta di 1h
 
 permissions:
   actions: read
-  contents: write      # necessario per push su gh-pages
-  pages: write         # necessario per GitHub Pages
+  contents: write
+  pages: write
 
 jobs:
   test-and-allure:
     runs-on: windows-latest
 
     steps:
+      # ── Checkout repository ─────────────────────
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ── Setup toolchain ─────────────────────────
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -56,11 +63,12 @@ jobs:
           java-version: "17"
 
       - name: Install Allure CLI (npm)
+        shell: pwsh
         run: |
           npm i -g allure
           allure --version
 
-      # ── Individua .sln o .csproj ─────────────
+      # ── Individua .sln o .csproj ────────────────
       - name: Locate solution or project
         id: locate
         shell: pwsh
@@ -83,32 +91,42 @@ jobs:
 
           throw "Nessun file .sln o .csproj trovato nel repository."
 
-      # ── Build ────────────────────────────────
+      # ── Build ───────────────────────────────────
       - name: Restore
+        shell: pwsh
         run: dotnet restore "${{ steps.locate.outputs.target }}"
 
       - name: Build
+        shell: pwsh
         run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
 
-      # ── Test ─────────────────────────────────
+      # ── Test ────────────────────────────────────
       - name: Test (TRX + Allure Results)
+        shell: pwsh
         continue-on-error: true
         run: >
           dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      # ── Configura Allure 3 (historyPath) ─────
+      # ── Configura Allure 3 (historyPath) ───────
       - name: Prepare Allure 3 CLI config (historyPath)
         shell: pwsh
         if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
+
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
-          $cfgObj = @{ historyPath = "./.allure/history.jsonl" }
+          $cfgObj = @{
+            historyPath = "./.allure/history.jsonl"
+          }
+
           $json = $cfgObj | ConvertTo-Json -Depth 5
           Set-Content -Path ".\allure-report.config.json" -Value $json -Encoding utf8
+
+          Write-Host "Configurazione Allure 3 creata:"
+          Get-Content ".\allure-report.config.json"
 
       # ── Recupera history.jsonl da GitHub Pages ──
       - name: Restore Allure history.jsonl from GitHub Pages
@@ -116,22 +134,27 @@ jobs:
         if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Continue"
+
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
           $url = "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/.allure/history.jsonl"
+          $dest = ".\.allure\history.jsonl"
 
           Write-Host "Recupero history.jsonl da: $url"
 
           try {
-            Invoke-WebRequest -Uri $url -OutFile ".\.allure\history.jsonl" -ErrorAction Stop
+            $resp = Invoke-WebRequest -Uri $url -OutFile $dest -PassThru -ErrorAction Stop
+            Write-Host "HTTP status: $($resp.StatusCode)"
             Write-Host "✅ history.jsonl recuperata da GitHub Pages"
           }
           catch {
-            Write-Host "Nessuna history trovata su GitHub Pages (prima run o pagina non ancora pubblicata). Si parte da zero."
-            New-Item -ItemType File -Force -Path ".\.allure\history.jsonl" | Out-Null
+            Write-Host "⚠️ Nessuna history trovata su GitHub Pages oppure file non accessibile."
+            Write-Host "Dettaglio errore: $($_.Exception.Message)"
+            New-Item -ItemType File -Force -Path $dest | Out-Null
+            Write-Host "Si parte da history vuota."
           }
 
-      # ── Genera report Allure 3 ────────────────
+      # ── Genera report Allure 3 ──────────────────
       - name: Generate Allure Report (Allure 3 + historyPath)
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -139,38 +162,54 @@ jobs:
           $ErrorActionPreference = "Stop"
 
           $resultsDirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" |
-                         Where-Object { (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0 } |
+                         Where-Object {
+                           (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+                         } |
                          Select-Object -ExpandProperty FullName
 
           if (-not $resultsDirs -or $resultsDirs.Count -eq 0) {
-            Write-Host "No allure-results with content found. Report will not be generated."
+            Write-Host "❌ Nessuna cartella allure-results con contenuto trovata. Report non generato."
             exit 1
           }
 
-          if (Test-Path ".\allure-report") { Remove-Item -Recurse -Force ".\allure-report" }
+          Write-Host "Cartelle allure-results trovate:"
+          $resultsDirs | ForEach-Object { Write-Host " - $_" }
+
+          if (Test-Path ".\allure-report") {
+            Remove-Item -Recurse -Force ".\allure-report"
+          }
 
           allure generate $resultsDirs --config ".\allure-report.config.json" -o ".\allure-report"
 
+      # ── Ensure history file exists ──────────────
       - name: Ensure history.jsonl exists
         shell: pwsh
         if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
+
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
           $hist = ".\.allure\history.jsonl"
-          if (-not (Test-Path $hist)) { New-Item -ItemType File -Force -Path $hist | Out-Null }
 
-      # ── Copia history.jsonl nel report per GitHub Pages ──────
-      # Così la prossima run può recuperarla direttamente dall'URL
+          if (-not (Test-Path $hist)) {
+            New-Item -ItemType File -Force -Path $hist | Out-Null
+          }
+
+          Write-Host "✅ history.jsonl presente in: $hist"
+
+      # ── Copia history.jsonl nel report ──────────
       - name: Include history.jsonl in report for GitHub Pages
         shell: pwsh
         if: ${{ !cancelled() }}
         run: |
+          $ErrorActionPreference = "Stop"
+
           New-Item -ItemType Directory -Force -Path ".\allure-report\.allure" | Out-Null
           Copy-Item -Force ".\.allure\history.jsonl" ".\allure-report\.allure\history.jsonl"
+
           Write-Host "✅ history.jsonl inclusa nel report"
 
-      # ── Deploy su GitHub Pages ────────────────
+      # ── Deploy su GitHub Pages ──────────────────
       - name: Deploy report to GitHub Pages
         if: ${{ !cancelled() }}
         shell: pwsh
@@ -186,11 +225,13 @@ jobs:
           $branch = "gh-pages"
           $remote = "https://x-access-token:$env:GH_TOKEN@github.com/$repo.git"
 
-          # Controlla se il branch gh-pages esiste già nel remote
-          $branchExists = git ls-remote --heads $remote $branch | Select-String $branch
+          Write-Host "Repository: $repo"
+          Write-Host "Branch deploy: $branch"
+
+          $branchExists = git ls-remote --heads $remote $branch
 
           New-Item -ItemType Directory -Force -Path "gh-pages-deploy" | Out-Null
-          Set-Location gh-pages-deploy
+          Set-Location "gh-pages-deploy"
 
           git init
           git remote add origin $remote
@@ -198,26 +239,39 @@ jobs:
           if ($branchExists) {
             Write-Host "Branch $branch trovato, scarico il contenuto attuale..."
             git fetch origin $branch --depth=1
-            git checkout $branch
-            # Svuota tutto tranne .git
-            Get-ChildItem -Force | Where-Object { $_.Name -ne ".git" } | Remove-Item -Recurse -Force
+            git checkout -b $branch "origin/$branch"
+
+            Get-ChildItem -Force |
+              Where-Object { $_.Name -ne ".git" } |
+              Remove-Item -Recurse -Force
           }
           else {
             Write-Host "Branch $branch non trovato, lo creo come orfano..."
             git checkout --orphan $branch
           }
 
-          # Copia il report generato (include già .allure/history.jsonl)
-          Copy-Item -Recurse -Force "..\allure-report\*" "."
+          Write-Host "Copio il report generato..."
+          Get-ChildItem "..\allure-report" -Force | Copy-Item -Destination "." -Recurse -Force
 
-          # Commit e push
+          Write-Host "Creo .nojekyll per consentire la pubblicazione di .allure/ ..."
+          New-Item -ItemType File -Force -Path ".nojekyll" | Out-Null
+
+          Write-Host "Contenuto root pronto per il deploy:"
+          Get-ChildItem -Force
+
           git add -A
+
           $changes = git status --porcelain
           if ($changes) {
             git commit -m "Report Allure — Run ${{ github.run_number }} — ${{ github.event_name }}"
             git push $remote $branch --force
+
             Write-Host ""
-            Write-Host "✅ Report pubblicato su: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+            Write-Host "✅ Report pubblicato su:"
+            Write-Host "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+            Write-Host ""
+            Write-Host "✅ History attesa su:"
+            Write-Host "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/.allure/history.jsonl"
           }
           else {
             Write-Host "Nessuna modifica da pubblicare."
