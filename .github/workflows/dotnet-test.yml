@@ -114,34 +114,23 @@ jobs:
           --results-directory ./TestResults
 
       # ── Configura Allure 3 ──────────────────────
-      - name: Prepare Allure 3 CLI config (historyPath + reportName)
+      - name: Prepare Allure 3 CLI config (minimal)
         shell: pwsh
         if: ${{ !cancelled() }}
         run: |
           $ErrorActionPreference = "Stop"
-
+      
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
-
+      
           $reportName = "BE API Tests - ${{ github.ref_name }}"
-
+      
           $cfgObj = @{
+            name = $reportName
             historyPath = "./.allure/history.jsonl"
-            plugins = @{
-              classic = @{
-                options = @{
-                  reportName = $reportName
-                  singleFile = $false
-                  reportLanguage = "en"
-                }
-              }
-            }
           }
-
+      
           $json = $cfgObj | ConvertTo-Json -Depth 10
           Set-Content -Path ".\allure-report.config.json" -Value $json -Encoding utf8
-
-          Write-Host "Configurazione Allure 3 creata:"
-          Get-Content ".\allure-report.config.json"
 
       # ── Recupera history.jsonl da GitHub Pages ──
       - name: Restore Allure history.jsonl from GitHub Pages
