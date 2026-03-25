@@ -16,10 +16,11 @@
 #   - Pubblicato su GitHub Pages (URL fisso, sempre aggiornato)
 #   - Nessun artifact salvato su GitHub Actions
 #
-# Note importanti:
-#   - Viene creato il file .nojekyll su gh-pages
-#   - Serve per pubblicare anche cartelle/file che iniziano con "."
-#   - Necessario per rendere accessibile /.allure/history.jsonl
+# Extra:
+#   - .nojekyll per pubblicare anche cartelle/file che iniziano con "."
+#   - reportName Allure personalizzato
+#   - patch del titolo browser tab
+#   - summary finale con link report
 # ══════════════════════════════════════════════════════════════
 
 name: BE API Tests (NUnit) + Allure 3 Report + GitHub Pages
@@ -112,8 +113,8 @@ jobs:
           --logger "trx;LogFileName=test_results.trx"
           --results-directory ./TestResults
 
-      # ── Configura Allure 3 (historyPath) ───────
-      - name: Prepare Allure 3 CLI config (historyPath)
+      # ── Configura Allure 3 ──────────────────────
+      - name: Prepare Allure 3 CLI config (historyPath + reportName)
         shell: pwsh
         if: ${{ !cancelled() }}
         run: |
@@ -121,11 +122,22 @@ jobs:
 
           New-Item -ItemType Directory -Force -Path ".\.allure" | Out-Null
 
+          $reportName = "BE API Tests - ${{ github.ref_name }}"
+
           $cfgObj = @{
             historyPath = "./.allure/history.jsonl"
+            plugins = @{
+              classic = @{
+                options = @{
+                  reportName = $reportName
+                  singleFile = $false
+                  reportLanguage = "it"
+                }
+              }
+            }
           }
 
-          $json = $cfgObj | ConvertTo-Json -Depth 5
+          $json = $cfgObj | ConvertTo-Json -Depth 10
           Set-Content -Path ".\allure-report.config.json" -Value $json -Encoding utf8
 
           Write-Host "Configurazione Allure 3 creata:"
@@ -212,6 +224,26 @@ jobs:
 
           Write-Host "✅ history.jsonl inclusa nel report"
 
+      # ── Patch titolo browser tab ────────────────
+      - name: Patch browser tab title
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $indexPath = ".\allure-report\index.html"
+          $browserTitle = "BE API Tests - ${{ github.ref_name }}"
+
+          if (Test-Path $indexPath) {
+            $content = Get-Content $indexPath -Raw
+            $content = $content -replace '<title>Allure Report</title>', "<title>$browserTitle</title>"
+            Set-Content -Path $indexPath -Value $content -Encoding utf8
+            Write-Host "✅ Browser tab title aggiornato: $browserTitle"
+          }
+          else {
+            Write-Host "⚠️ index.html non trovato, title non aggiornato"
+          }
+
       # ── Deploy su GitHub Pages ──────────────────
       - name: Deploy report to GitHub Pages
         if: ${{ !cancelled() }}
@@ -279,3 +311,21 @@ jobs:
           else {
             Write-Host "Nessuna modifica da pubblicare."
           }
+
+      # ── Summary finale con link utili ───────────
+      - name: Publish links in job summary
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $reportUrl = "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          $historyUrl = "$reportUrl/.allure/history.jsonl"
+
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "## Allure Report"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ""
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Report: $reportUrl"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- History: $historyUrl"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Branch: ${{ github.ref_name }}"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Run number: ${{ github.run_number }}"
+
+          Write-Host "Allure Report: $reportUrl"
+          Write-Host "History: $historyUrl"
