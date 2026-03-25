@@ -144,7 +144,7 @@ jobs:
         continue-on-error: true
         run: >
           dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
-          --filter "TestCategory=Validation Test"
+          -- NUnit.Where="cat == 'Validation Test'"
           --logger "trx;LogFileName=validation_results.trx"
           --results-directory ./TestResults/Validation
 
