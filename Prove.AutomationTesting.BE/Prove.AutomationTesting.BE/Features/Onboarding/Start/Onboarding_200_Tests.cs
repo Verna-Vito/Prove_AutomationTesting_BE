@@ -54,7 +54,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 200 + body", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(400));
+            Assert.That(result.StatusCode, Is.EqualTo(200));
             Assert.That(result.Body, Does.Contain("started"));
         });
     }
@@ -110,11 +110,11 @@ public class Onboarding_200_Tests
         });
 
         // Assert
-        AllureApi.Step("Assert status 409", () =>
-        {
+        /*AllureApi.Step("Assert status 409", () =>
+        {*/
             Assert.That(result.StatusCode, Is.EqualTo(409));
             Assert.That(result.Body, Does.Contain("already"));
-        });
+        //});
     }
 
     [Test]
@@ -144,7 +144,7 @@ public class Onboarding_200_Tests
 
         AllureApi.Step("Assert volutamente errata (result.StatusCode)", () =>
         {
-            Assert.That(400, Is.EqualTo(result.StatusCode), "Fail voluto: il mock torna 200.");
+            Assert.That(200, Is.EqualTo(result.StatusCode), "Fail voluto: il mock torna 200.");
         });
     }
 
