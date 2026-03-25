@@ -110,11 +110,11 @@ public class Onboarding_200_Tests
         });
 
         // Assert
-        /*AllureApi.Step("Assert status 409", () =>
-        {*/
+        AllureApi.Step("Assert status 409", () =>
+        {
             Assert.That(result.StatusCode, Is.EqualTo(409));
             Assert.That(result.Body, Does.Contain("already"));
-        //});
+        });
     }
 
     [Test]
