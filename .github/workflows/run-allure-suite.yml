@@ -1,0 +1,233 @@
+name: Run Allure Suite
+
+on:
+  workflow_call:
+    inputs:
+      suite_name:
+        required: true
+        type: string
+      report_subpath:
+        required: true
+        type: string
+      report_title:
+        required: true
+        type: string
+      nunit_where:
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  run-suite:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Setup Node (Allure CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Install Allure CLI
+        shell: pwsh
+        run: |
+          npm i -g allure
+          allure --version
+
+      - name: Locate solution or project
+        id: locate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $sln = Get-ChildItem -Path . -Recurse -File -Filter *.sln | Select-Object -First 1
+          if ($sln) {
+            "target=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            exit 0
+          }
+
+          $csproj = Get-ChildItem -Path . -Recurse -File -Filter *.csproj | Select-Object -First 1
+          if ($csproj) {
+            "target=$($csproj.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            exit 0
+          }
+
+          throw "Nessun file .sln o .csproj trovato nel repository."
+
+      - name: Restore
+        shell: pwsh
+        run: dotnet restore "${{ steps.locate.outputs.target }}"
+
+      - name: Build
+        shell: pwsh
+        run: dotnet build "${{ steps.locate.outputs.target }}" --configuration Release --no-restore
+
+      - name: Prepare folders
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ".\.allure\${{ inputs.report_subpath }}" | Out-Null
+          New-Item -ItemType Directory -Force -Path ".\captured-results\${{ inputs.report_subpath }}" | Out-Null
+
+      - name: Prepare Allure config
+        shell: pwsh
+        run: |
+          $cfgObj = @{
+            name = "${{ inputs.report_title }} - ${{ github.ref_name }}"
+            historyPath = "./.allure/${{ inputs.report_subpath }}/history.jsonl"
+          }
+          $json = $cfgObj | ConvertTo-Json -Depth 10
+          Set-Content -Path ".\allure-${{ inputs.report_subpath }}.config.json" -Value $json -Encoding utf8
+
+      - name: Restore history
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $ErrorActionPreference = "Continue"
+          $url = "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ inputs.report_subpath }}/.allure/history.jsonl"
+          $dest = ".\.allure\${{ inputs.report_subpath }}\history.jsonl"
+
+          try {
+            Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
+            Write-Host "✅ History recuperata"
+          }
+          catch {
+            New-Item -ItemType File -Force -Path $dest | Out-Null
+            Write-Host "⚠️ History non trovata, continuo con history vuota"
+          }
+
+      - name: Cleanup old allure results
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+      - name: Run tests
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $args = @(
+            "test"
+            "${{ steps.locate.outputs.target }}"
+            "--configuration", "Release"
+            "--no-build"
+            "--logger", "trx;LogFileName=${{ inputs.report_subpath }}_results.trx"
+            "--results-directory", "./TestResults/${{ inputs.report_subpath }}"
+          )
+
+          if ("${{ inputs.nunit_where }}".Trim() -ne "") {
+            $args += "--"
+            $args += "NUnit.Where=${{ inputs.nunit_where }}"
+          }
+
+          dotnet @args
+
+      - name: Capture results
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          $dirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
+                  Where-Object {
+                    (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+                  } |
+                  Sort-Object LastWriteTime -Descending
+
+          if ($dirs -and $dirs.Count -gt 0) {
+            $src = $dirs[0].FullName
+            $dest = ".\captured-results\${{ inputs.report_subpath }}"
+
+            if (Test-Path $dest) {
+              Get-ChildItem $dest -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            }
+
+            Get-ChildItem $src -Force | Copy-Item -Destination $dest -Recurse -Force
+            Write-Host "✅ Results catturati da $src"
+          }
+          else {
+            Write-Host "⚠️ Nessuna allure-results trovata per ${{ inputs.suite_name }}"
+          }
+
+      - name: Generate report
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+          $resultsDir = ".\captured-results\${{ inputs.report_subpath }}"
+          $reportDir = ".\allure-report-${{ inputs.report_subpath }}"
+
+          if (-not (Test-Path $resultsDir)) {
+            Write-Host "⚠️ Cartella risultati non trovata. Salto generate."
+            exit 0
+          }
+
+          $files = Get-ChildItem $resultsDir -File -Recurse -ErrorAction SilentlyContinue
+          if (-not $files -or $files.Count -eq 0) {
+            Write-Host "⚠️ Nessun file risultati trovato. Salto generate."
+            exit 0
+          }
+
+          if (Test-Path $reportDir) {
+            Remove-Item -Recurse -Force $reportDir
+          }
+
+          allure generate $resultsDir --config ".\allure-${{ inputs.report_subpath }}.config.json" -o $reportDir
+
+      - name: Include history in report
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          $reportDir = ".\allure-report-${{ inputs.report_subpath }}"
+          $historySrc = ".\.allure\${{ inputs.report_subpath }}\history.jsonl"
+          $historyDestDir = "$reportDir\.allure"
+          $historyDest = "$historyDestDir\history.jsonl"
+
+          if (-not (Test-Path $reportDir)) {
+            Write-Host "⚠️ Report non trovato. Salto copia history."
+            exit 0
+          }
+
+          New-Item -ItemType Directory -Force -Path $historyDestDir | Out-Null
+
+          if (Test-Path $historySrc) {
+            Copy-Item -Force $historySrc $historyDest
+            Write-Host "✅ History copiata nel report"
+          }
+
+      - name: Patch browser tab title
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          $indexPath = ".\allure-report-${{ inputs.report_subpath }}\index.html"
+          $browserTitle = "${{ inputs.report_title }} - ${{ github.ref_name }}"
+
+          if (Test-Path $indexPath) {
+            $content = Get-Content $indexPath -Raw
+            $content = $content -replace '<title>Allure Report</title>', "<title>$browserTitle</title>"
+            Set-Content -Path $indexPath -Value $content -Encoding utf8
+          }
+
+      - name: Upload report artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && hashFiles(format('allure-report-{0}/**', inputs.report_subpath)) != '' }}
+        with:
+          name: allure-report-${{ inputs.report_subpath }}
+          path: allure-report-${{ inputs.report_subpath }}
