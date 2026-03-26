@@ -371,6 +371,7 @@ jobs:
       - name: Create Pages landing page
         shell: pwsh
         run: |
+          $runDate = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
           $html = @"
           <!DOCTYPE html>
           <html lang="it">
@@ -391,7 +392,7 @@ jobs:
           <body>
             <div class="wrap">
               <h1>BE API Test Reports</h1>
-              <p>Branch: ${{ github.ref_name }} | Run: ${{ github.run_number }}</p>
+              <p>Branch: ${{ github.ref_name }} | Run: ${{ github.run_number }} | Run at: $runDate</p>
               <div class="grid">
                 <div class="card">
                   <h2>Validation</h2>
