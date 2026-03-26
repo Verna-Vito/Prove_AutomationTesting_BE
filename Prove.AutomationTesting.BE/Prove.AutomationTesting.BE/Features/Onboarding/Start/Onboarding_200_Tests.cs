@@ -56,7 +56,7 @@ public class Onboarding_200_Tests
         {
             Assert.That(result.StatusCode, Is.EqualTo(200));
             Assert.That(result.Body, Does.Contain("started"));
-            Assert.Inconclusive("Riproviamo inconclusive nell'assert");
+            Assert.Ignore("Proviamolo qui!");
         });
     }
 
@@ -144,7 +144,6 @@ public class Onboarding_200_Tests
         {
             Assert.That(result.StatusCode, Is.EqualTo(409));
             Assert.That(result.Body, Does.Contain("already"));
-            Assert.Ignore("Proviamolo qui!");
         });
     }
 
