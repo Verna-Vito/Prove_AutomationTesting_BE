@@ -33,7 +33,6 @@ public class Onboarding_200_Tests
     [Test]
     [AllureIssue("5")] // se vuoi usare template {issue}; qui la PBI 14
     [AllureSeverity(SeverityLevel.critical)]
-    [Ignore("Prova Ignore")]
     public async Task Start_should_return_200_when_payload_is_valid()
     {
         // Arrange
@@ -84,9 +83,8 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 400 + messaggio errore", () =>
         {
-            Assert.Inconclusive("Prova inconclusive");
-            /*Assert.That(result.StatusCode, Is.EqualTo(400));
-            Assert.That(result.Body, Does.Contain("email"));*/
+            Assert.That(result.StatusCode, Is.EqualTo(400));
+            Assert.That(result.Body, Does.Contain("email"));
         });
     }
 
@@ -116,6 +114,36 @@ public class Onboarding_200_Tests
         {
             Assert.That(result.StatusCode, Is.EqualTo(409));
             Assert.That(result.Body, Does.Contain("already"));
+        });
+    }
+
+    [Test]
+    [AllureIssue("14")]
+    [AllureSeverity(SeverityLevel.normal)]
+    public async Task Start_should_return_409_when_user_already_started_onboarding_2()
+    {
+        // Arrange (mock scenario: utente già presente)
+        var request = new StartOnboardingRequest(
+            email: "already@started.com",
+            country: "IT",
+            consent: true
+        );
+
+        // Act
+        var result = await AllureApi.Step("POST /onboarding/start per utente già in onboarding", async () =>
+        {
+            LogRequest("/onboarding/start", request);
+            var res = await _api.StartAsync(request);
+            LogResponse(res);
+            return res;
+        });
+
+        // Assert
+        AllureApi.Step("Assert status 409", () =>
+        {
+            Assert.That(result.StatusCode, Is.EqualTo(409));
+            Assert.That(result.Body, Does.Contain("already"));
+            Assert.Ignore("Proviamolo qui!");
         });
     }
 
