@@ -40,7 +40,7 @@ jobs:
       suite_name: "Integration"
       report_subpath: "integration"
       report_title: "BE API Tests - Integration"
-      nunit_where: ""
+      nunit_where: "cat == 'Integration Test'"
 
   deploy-pages:
     name: Deploy Pages
@@ -68,6 +68,13 @@ jobs:
         with:
           name: allure-report-non-regression
           path: allure-report-non-regression
+
+      - name: Download Integration report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-report-integration
+          path: allure-report-integration
 
       - name: Create Pages landing page
         shell: pwsh
@@ -166,6 +173,11 @@ jobs:
             Get-ChildItem "..\allure-report-non-regression" -Force | Copy-Item -Destination ".\non-regression" -Recurse -Force
           }
 
+          if (Test-Path "..\allure-report-integration") {
+            New-Item -ItemType Directory -Force -Path ".\integration" | Out-Null
+            Get-ChildItem "..\allure-report-integration" -Force | Copy-Item -Destination ".\integration" -Recurse -Force
+          }
+
           Copy-Item -Force "..\pages-index.html" ".\index.html"
           New-Item -ItemType File -Force -Path ".nojekyll" | Out-Null
 
@@ -189,5 +201,4 @@ jobs:
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Home: $baseUrl"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Validation: $baseUrl/validation/"
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Non Regression: $baseUrl/non-regression/"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Branch: ${{ github.ref_name }}"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Run number: ${{ github.run_number }}"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "- Non Regression: $baseUrl/integration/"
