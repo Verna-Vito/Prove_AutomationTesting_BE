@@ -231,3 +231,4 @@ jobs:
         with:
           name: allure-report-${{ inputs.report_subpath }}
           path: allure-report-${{ inputs.report_subpath }}
+          include-hidden-files: true
