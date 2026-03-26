@@ -2,8 +2,8 @@ name: BE API Tests (NUnit) + Allure 3 Reports + GitHub Pages
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [ "master" ]
+  push:
+    branches: [ "master" ]
   schedule:
     - cron: '0 07 * * *'
       timezone: 'Europe/Rome'
@@ -32,6 +32,14 @@ jobs:
       suite_name: "Non Regression"
       report_subpath: "non-regression"
       report_title: "BE API Tests - Non Regression"
+      nunit_where: ""
+
+  integration:
+    uses: ./.github/workflows/run-allure-suite.yml
+    with:
+      suite_name: "Integration"
+      report_subpath: "integration"
+      report_title: "BE API Tests - Integration"
       nunit_where: ""
 
   deploy-pages:
@@ -103,6 +111,10 @@ jobs:
                 <div class="card">
                   <h2>Non Regression</h2>
                   <a href="./non-regression/">Apri report Non Regression</a>
+                </div>
+                <div class="card">
+                  <h2>Integration</h2>
+                  <a href="./integration/">Apri report Integration</a>
                 </div>
               </div>
             </div>
