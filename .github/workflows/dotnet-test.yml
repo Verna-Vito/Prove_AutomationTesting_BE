@@ -103,34 +103,40 @@ jobs:
           $json = $cfgObj | ConvertTo-Json -Depth 10
           Set-Content -Path ".\allure-report-non-regression.config.json" -Value $json -Encoding utf8
 
+      # ── Restore history PRIMA della generate ─────────────────────
+
       - name: Restore Validation history
         shell: pwsh
         continue-on-error: true
         run: |
+          $ErrorActionPreference = "Continue"
           $url = "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/validation/.allure/history.jsonl"
           $dest = ".\.allure\validation\history.jsonl"
+
           try {
             Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
             Write-Host "✅ Validation history recuperata"
           }
           catch {
             New-Item -ItemType File -Force -Path $dest | Out-Null
-            Write-Host "⚠️ Validation history non trovata"
+            Write-Host "⚠️ Validation history non trovata, continuo con history vuota"
           }
 
       - name: Restore Non Regression history
         shell: pwsh
         continue-on-error: true
         run: |
+          $ErrorActionPreference = "Continue"
           $url = "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/non-regression/.allure/history.jsonl"
           $dest = ".\.allure\non-regression\history.jsonl"
+
           try {
             Invoke-WebRequest -Uri $url -OutFile $dest -ErrorAction Stop
             Write-Host "✅ Non Regression history recuperata"
           }
           catch {
             New-Item -ItemType File -Force -Path $dest | Out-Null
-            Write-Host "⚠️ Non Regression history non trovata"
+            Write-Host "⚠️ Non Regression history non trovata, continuo con history vuota"
           }
 
       - name: Cleanup old allure results
@@ -138,6 +144,8 @@ jobs:
         run: |
           Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
             Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+      # ── Validation run ────────────────────────────────────────────
 
       - name: Run Validation tests
         shell: pwsh
@@ -148,37 +156,16 @@ jobs:
           --logger "trx;LogFileName=validation_results.trx"
           --results-directory ./TestResults/Validation
 
-      - name: Debug Validation outputs
+      - name: Capture Validation results
         shell: pwsh
         if: ${{ !cancelled() }}
-        run: |
-          Write-Host "=== TEST RESULTS VALIDATION ==="
-          if (Test-Path ".\TestResults") {
-            Get-ChildItem ".\TestResults" -Recurse -Force | ForEach-Object { Write-Host $_.FullName }
-          } else {
-            Write-Host "TestResults non trovata"
-          }
-
-          Write-Host "=== DIRECTORIES NAMED allure-results ==="
-          Get-ChildItem -Path . -Recurse -Directory -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -like "*allure*" } |
-            ForEach-Object { Write-Host $_.FullName }
-
-          Write-Host "=== JSON FILES THAT LOOK LIKE ALLURE OUTPUT ==="
-          Get-ChildItem -Path . -Recurse -File -Include *.json -ErrorAction SilentlyContinue |
-            Where-Object {
-              $_.Name -match 'result|container|categories|executor|environment|history'
-            } |
-            ForEach-Object { Write-Host $_.FullName }
-
-      - name: Capture Validation results
-        id: capture_validation
-        shell: pwsh
-        continue-on-error: true
         run: |
           $ErrorActionPreference = "Continue"
 
           $dirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
+                  Where-Object {
+                    (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+                  } |
                   Sort-Object LastWriteTime -Descending
 
           if ($dirs -and $dirs.Count -gt 0) {
@@ -186,99 +173,41 @@ jobs:
             $dest = ".\captured-results\validation"
 
             if (Test-Path $dest) {
-              Get-ChildItem $dest -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+              Get-ChildItem $dest -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
             }
 
             Get-ChildItem $src -Force | Copy-Item -Destination $dest -Recurse -Force
-            Write-Host "validation_found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             Write-Host "✅ Validation results catturati da $src"
           }
           else {
-            Write-Host "validation_found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
             Write-Host "⚠️ Nessuna allure-results trovata per Validation"
-          }
-
-      - name: Cleanup old allure results before Non Regression
-        shell: pwsh
-        run: |
-          Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-
-      - name: Run Non Regression tests
-        shell: pwsh
-        continue-on-error: true
-        run: >
-          dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
-          --logger "trx;LogFileName=non_regression_results.trx"
-          --results-directory ./TestResults/NonRegression
-
-      - name: Debug Non Regression outputs
-        shell: pwsh
-        if: ${{ !cancelled() }}
-        run: |
-          Write-Host "=== TEST RESULTS NON REGRESSION ==="
-          if (Test-Path ".\TestResults") {
-            Get-ChildItem ".\TestResults" -Recurse -Force | ForEach-Object { Write-Host $_.FullName }
-          } else {
-            Write-Host "TestResults non trovata"
-          }
-
-          Write-Host "=== DIRECTORIES NAMED allure-results ==="
-          Get-ChildItem -Path . -Recurse -Directory -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -like "*allure*" } |
-            ForEach-Object { Write-Host $_.FullName }
-
-          Write-Host "=== JSON FILES THAT LOOK LIKE ALLURE OUTPUT ==="
-          Get-ChildItem -Path . -Recurse -File -Include *.json -ErrorAction SilentlyContinue |
-            Where-Object {
-              $_.Name -match 'result|container|categories|executor|environment|history'
-            } |
-            ForEach-Object { Write-Host $_.FullName }
-
-      - name: Capture Non Regression results
-        id: capture_nonreg
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          $ErrorActionPreference = "Continue"
-
-          $dirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
-                  Sort-Object LastWriteTime -Descending
-
-          if ($dirs -and $dirs.Count -gt 0) {
-            $src = $dirs[0].FullName
-            $dest = ".\captured-results\non-regression"
-
-            if (Test-Path $dest) {
-              Get-ChildItem $dest -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-            }
-
-            Get-ChildItem $src -Force | Copy-Item -Destination $dest -Recurse -Force
-            Write-Host "nonreg_found=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            Write-Host "✅ Non Regression results catturati da $src"
-          }
-          else {
-            Write-Host "nonreg_found=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-            Write-Host "⚠️ Nessuna allure-results trovata per Non Regression"
           }
 
       - name: Generate Validation report
         shell: pwsh
+        if: ${{ !cancelled() }}
         run: |
+          $ErrorActionPreference = "Continue"
+          $resultsDir = ".\captured-results\validation"
+
+          if (-not (Test-Path $resultsDir)) {
+            Write-Host "⚠️ Cartella risultati Validation non trovata. Salto generate."
+            exit 0
+          }
+
+          $files = Get-ChildItem $resultsDir -File -Recurse -ErrorAction SilentlyContinue
+          if (-not $files -or $files.Count -eq 0) {
+            Write-Host "⚠️ Nessun file risultati Validation trovato. Salto generate."
+            exit 0
+          }
+
           if (Test-Path ".\allure-report-validation") {
             Remove-Item -Recurse -Force ".\allure-report-validation"
           }
-          allure generate ".\captured-results\validation" --config ".\allure-report-validation.config.json" -o ".\allure-report-validation"
 
-      - name: Generate Non Regression report
-        shell: pwsh
-        run: |
-          if (Test-Path ".\allure-report-non-regression") {
-            Remove-Item -Recurse -Force ".\allure-report-non-regression"
-          }
-          allure generate ".\captured-results\non-regression" --config ".\allure-report-non-regression.config.json" -o ".\allure-report-non-regression"
+          allure generate $resultsDir --config ".\allure-report-validation.config.json" -o ".\allure-report-validation"
 
-      # ── Include history Validation nel report ───
       - name: Include Validation history in report
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -305,7 +234,95 @@ jobs:
             Write-Host "⚠️ Validation history non trovata. Continuo senza history."
           }
 
-      # ── Include history Non Regression nel report ──
+      - name: Patch Validation browser tab title
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          $indexPath = ".\allure-report-validation\index.html"
+          $browserTitle = "BE API Tests - Validation - ${{ github.ref_name }}"
+
+          if (Test-Path $indexPath) {
+            $content = Get-Content $indexPath -Raw
+            $content = $content -replace '<title>Allure Report</title>', "<title>$browserTitle</title>"
+            Set-Content -Path $indexPath -Value $content -Encoding utf8
+            Write-Host "✅ Titolo tab Validation aggiornato"
+          }
+          else {
+            Write-Host "⚠️ index.html Validation non trovato. Salto patch titolo."
+          }
+
+      # ── Cleanup prima della Non Regression ────────────────────────
+
+      - name: Cleanup old allure results before Non Regression
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+
+      # ── Non Regression run ────────────────────────────────────────
+
+      - name: Run Non Regression tests
+        shell: pwsh
+        continue-on-error: true
+        run: >
+          dotnet test "${{ steps.locate.outputs.target }}" --configuration Release --no-build
+          --logger "trx;LogFileName=non_regression_results.trx"
+          --results-directory ./TestResults/NonRegression
+
+      - name: Capture Non Regression results
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+
+          $dirs = Get-ChildItem -Path . -Recurse -Directory -Filter "allure-results" -ErrorAction SilentlyContinue |
+                  Where-Object {
+                    (Get-ChildItem $_.FullName -File -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0
+                  } |
+                  Sort-Object LastWriteTime -Descending
+
+          if ($dirs -and $dirs.Count -gt 0) {
+            $src = $dirs[0].FullName
+            $dest = ".\captured-results\non-regression"
+
+            if (Test-Path $dest) {
+              Get-ChildItem $dest -Force -ErrorAction SilentlyContinue |
+                Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+            }
+
+            Get-ChildItem $src -Force | Copy-Item -Destination $dest -Recurse -Force
+            Write-Host "✅ Non Regression results catturati da $src"
+          }
+          else {
+            Write-Host "⚠️ Nessuna allure-results trovata per Non Regression"
+          }
+
+      - name: Generate Non Regression report
+        shell: pwsh
+        if: ${{ !cancelled() }}
+        run: |
+          $ErrorActionPreference = "Continue"
+          $resultsDir = ".\captured-results\non-regression"
+
+          if (-not (Test-Path $resultsDir)) {
+            Write-Host "⚠️ Cartella risultati Non Regression non trovata. Salto generate."
+            exit 0
+          }
+
+          $files = Get-ChildItem $resultsDir -File -Recurse -ErrorAction SilentlyContinue
+          if (-not $files -or $files.Count -eq 0) {
+            Write-Host "⚠️ Nessun file risultati Non Regression trovato. Salto generate."
+            exit 0
+          }
+
+          if (Test-Path ".\allure-report-non-regression") {
+            Remove-Item -Recurse -Force ".\allure-report-non-regression"
+          }
+
+          allure generate $resultsDir --config ".\allure-report-non-regression.config.json" -o ".\allure-report-non-regression"
+
       - name: Include Non Regression history in report
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -332,27 +349,6 @@ jobs:
             Write-Host "⚠️ Non Regression history non trovata. Continuo senza history."
           }
 
-      # ── Patch titolo tab Validation ─────────────
-      - name: Patch Validation browser tab title
-        shell: pwsh
-        if: ${{ !cancelled() }}
-        run: |
-          $ErrorActionPreference = "Continue"
-
-          $indexPath = ".\allure-report-validation\index.html"
-          $browserTitle = "BE API Tests - Validation - ${{ github.ref_name }}"
-
-          if (Test-Path $indexPath) {
-            $content = Get-Content $indexPath -Raw
-            $content = $content -replace '<title>Allure Report</title>', "<title>$browserTitle</title>"
-            Set-Content -Path $indexPath -Value $content -Encoding utf8
-            Write-Host "✅ Titolo tab Validation aggiornato"
-          }
-          else {
-            Write-Host "⚠️ index.html Validation non trovato. Salto patch titolo."
-          }
-
-      # ── Patch titolo tab Non Regression ─────────
       - name: Patch Non Regression browser tab title
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -383,7 +379,7 @@ jobs:
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>BE API Test Reports</title>
             <style>
-              body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 40px; }
+              body { font-family: Arial, sans-serif; background: #2c343fff; color: #f6fafef5; margin: 0; padding: 40px; }
               .wrap { max-width: 900px; margin: 0 auto; }
               h1 { margin-bottom: 8px; }
               p { color: #94a3b8; }
@@ -463,7 +459,8 @@ jobs:
           if ($changes) {
             git commit -m "Publish Allure reports — Run ${{ github.run_number }} — ${{ github.event_name }}"
             git push $remote $branch --force
-          } else {
+          }
+          else {
             Write-Host "Nessuna modifica da pubblicare."
           }
 
