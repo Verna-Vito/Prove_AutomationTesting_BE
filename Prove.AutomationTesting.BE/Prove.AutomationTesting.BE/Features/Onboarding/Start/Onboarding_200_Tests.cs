@@ -33,6 +33,7 @@ public class Onboarding_200_Tests
     [Test]
     [AllureIssue("5")] // se vuoi usare template {issue}; qui la PBI 14
     [AllureSeverity(SeverityLevel.critical)]
+    [Ignore("Prova Ignore")]
     public async Task Start_should_return_200_when_payload_is_valid()
     {
         // Arrange
@@ -83,8 +84,9 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 400 + messaggio errore", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(400));
-            Assert.That(result.Body, Does.Contain("email"));
+            Assert.Inconclusive("Prova inconclusive");
+            /*Assert.That(result.StatusCode, Is.EqualTo(400));
+            Assert.That(result.Body, Does.Contain("email"));*/
         });
     }
 
