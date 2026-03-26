@@ -5,7 +5,7 @@ on:
   push:
     branches: [ "master" ]
   schedule:
-    - cron: '20 23 * * *'
+    - cron: '0 08 * * *'
       timezone: 'Europe/Rome'
 
 permissions:
