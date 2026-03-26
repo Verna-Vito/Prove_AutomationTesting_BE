@@ -371,7 +371,9 @@ jobs:
       - name: Create Pages landing page
         shell: pwsh
         run: |
-          $runDate = Get-Date -Format "dd/MM/yyyy HH:mm:ss"
+          $romeTz = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
+          $romeNow = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $romeTz)
+          $runDate = $romeNow.ToString("dd/MM/yyyy HH:mm:ss")
           $html = @"
           <!DOCTYPE html>
           <html lang="it">
