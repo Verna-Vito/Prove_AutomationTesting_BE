@@ -48,6 +48,7 @@ jobs:
     needs:
       - validation
       - non-regression
+      - integration
     if: ${{ always() && !cancelled() }}
 
     steps:
