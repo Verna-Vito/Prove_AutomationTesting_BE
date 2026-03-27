@@ -35,7 +35,7 @@ public class Onboarding_400_Tests : OnboardingApiTestBase
     }
 
     [Test]
-    [Category("Validation Test")]
+    [Category("Integration Test")]
     public async Task Should_Return_400_On_NoToken_Passed()
     {
         // Arrange
