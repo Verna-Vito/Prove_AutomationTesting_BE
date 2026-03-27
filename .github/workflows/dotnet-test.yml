@@ -3,7 +3,7 @@ name: BE API Tests (NUnit) + Allure 3 Reports + GitHub Pages
 on:
   workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "develop" ]
   schedule:
     - cron: '0 07 * * *'
       timezone: 'Europe/Rome'
@@ -100,7 +100,10 @@ jobs:
       - name: Create Pages landing page
         shell: pwsh
         run: |
-          $romeNow = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), "W. Europe Standard Time")
+          $ErrorActionPreference = "Stop"
+
+          $romeTzId = "W. Europe Standard Time"
+          $romeNow = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), $romeTzId)
           $runDate = $romeNow.ToString("dd/MM/yyyy HH:mm")
 
           switch ("${{ github.event_name }}") {
@@ -108,6 +111,93 @@ jobs:
             "workflow_dispatch" { $runType = "Manual" }
             "push" { $runType = "Push" }
             default { $runType = "${{ github.event_name }}" }
+          }
+
+          $triggeredSchedule = "${{ github.event.schedule }}"
+          if ([string]::IsNullOrWhiteSpace($triggeredSchedule)) {
+            $triggeredScheduleLabel = "N/A"
+          }
+          else {
+            $triggeredScheduleLabel = $triggeredSchedule
+          }
+
+          # Schedules configurati nel workflow
+          # Questa previsione è calcolata sulle cron giornaliere attuali del workflow.
+          $scheduleDefinitions = @(
+            @{ cron = "0 07 * * *"; label = "07:00"; timezone = "Europe/Rome" },
+            @{ cron = "0 15 * * *"; label = "15:00"; timezone = "Europe/Rome" },
+            @{ cron = "0 23 * * *"; label = "23:00"; timezone = "Europe/Rome" }
+          )
+
+          function Get-NextDailyOccurrence {
+            param(
+              [Parameter(Mandatory = $true)][string]$Cron,
+              [Parameter(Mandatory = $true)][datetime]$NowLocal
+            )
+
+            $parts = $Cron -split "\s+"
+            if ($parts.Count -ne 5) {
+              return $null
+            }
+
+            $minuteExpr = $parts[0]
+            $hourExpr   = $parts[1]
+            $dayExpr    = $parts[2]
+            $monthExpr  = $parts[3]
+            $dowExpr    = $parts[4]
+
+            if ($dayExpr -ne "*" -or $monthExpr -ne "*" -or $dowExpr -ne "*") {
+              return $null
+            }
+
+            if ($minuteExpr -notmatch '^\d{1,2}$' -or $hourExpr -notmatch '^\d{1,2}$') {
+              return $null
+            }
+
+            $minute = [int]$minuteExpr
+            $hour   = [int]$hourExpr
+
+            if ($minute -lt 0 -or $minute -gt 59 -or $hour -lt 0 -or $hour -gt 23) {
+              return $null
+            }
+
+            $candidate = Get-Date -Year $NowLocal.Year -Month $NowLocal.Month -Day $NowLocal.Day -Hour $hour -Minute $minute -Second 0
+
+            if ($candidate -le $NowLocal) {
+              $candidate = $candidate.AddDays(1)
+            }
+
+            return $candidate
+          }
+
+          $nextRuns = New-Object System.Collections.Generic.List[object]
+
+          foreach ($schedule in $scheduleDefinitions) {
+            $next = Get-NextDailyOccurrence -Cron $schedule.cron -NowLocal $romeNow
+            if ($null -ne $next) {
+              $nextRuns.Add([PSCustomObject]@{
+                Cron     = $schedule.cron
+                Label    = $schedule.label
+                Timezone = $schedule.timezone
+                When     = $next
+                Display  = "{0} · {1}" -f $next.ToString("dd/MM/yyyy HH:mm"), $schedule.timezone
+              })
+            }
+          }
+
+          $nextRuns =
+            $nextRuns |
+            Sort-Object When |
+            Group-Object Display |
+            ForEach-Object { $_.Group[0] }
+
+          $nextRunsHtml = ""
+          foreach ($run in $nextRuns) {
+            $nextRunsHtml += "<span class='hero-schedule-pill' title='Cron: $($run.Cron)'>$($run.Display)</span>`n"
+          }
+
+          if ([string]::IsNullOrWhiteSpace($nextRunsHtml)) {
+            $nextRunsHtml = "<span class='hero-schedule-pill hero-schedule-pill-muted'>No future scheduled run detected</span>"
           }
 
           $html = @"
@@ -129,11 +219,11 @@ jobs:
                 --border: rgba(189, 212, 255, 0.21);
                 --shadow: rgba(0, 0, 0, 0.22);
               }
-          
+
               * {
                 box-sizing: border-box;
               }
-          
+
               body {
                 margin: 0;
                 font-family: Arial, sans-serif;
@@ -144,20 +234,20 @@ jobs:
                   linear-gradient(180deg, #2c343f 0%, #26303a 100%);
                 min-height: 100vh;
               }
-          
+
               .wrap {
                 max-width: 1100px;
                 margin: 0 auto;
                 padding: 32px 20px 40px;
               }
-          
+
               .hero {
                 display: grid;
-                grid-template-columns: 1.4fr 1fr;
+                grid-template-columns: 1.45fr 1fr;
                 gap: 20px;
                 margin-bottom: 22px;
               }
-          
+
               .hero-main,
               .hero-side {
                 background: rgba(27, 33, 41, 0.9);
@@ -165,7 +255,7 @@ jobs:
                 border-radius: 18px;
                 box-shadow: 0 10px 28px var(--shadow);
               }
-          
+
               .hero-main {
                 padding: 26px;
                 position: relative;
@@ -174,7 +264,7 @@ jobs:
                 flex-direction: column;
                 min-height: 100%;
               }
-          
+
               .hero-main::before {
                 content: "";
                 position: absolute;
@@ -184,7 +274,7 @@ jobs:
                   linear-gradient(315deg, rgba(239, 127, 63, 0.08), transparent 42%);
                 pointer-events: none;
               }
-          
+
               .brand {
                 position: relative;
                 z-index: 1;
@@ -195,13 +285,13 @@ jobs:
                 margin-bottom: 18px;
                 width: 100%;
               }
-          
+
               .brand-left,
               .brand-right {
                 display: flex;
                 align-items: center;
               }
-          
+
               .brand-logo {
                 display: block;
                 object-fit: contain;
@@ -211,19 +301,19 @@ jobs:
                 padding: 0;
                 border: none;
               }
-          
+
               .main-logo {
                 height: 46px;
                 width: auto;
                 max-width: 200px;
               }
-          
+
               .secondary-logo {
                 height: 46px;
                 width: auto;
                 max-width: 200px;
               }
-          
+
               .hero-tag {
                 display: inline-block;
                 margin-bottom: 14px;
@@ -240,7 +330,7 @@ jobs:
                 z-index: 1;
                 width: fit-content;
               }
-          
+
               .hero-main h1 {
                 margin: 0 0 10px;
                 font-size: 1.9rem;
@@ -248,16 +338,46 @@ jobs:
                 position: relative;
                 z-index: 1;
               }
-          
+
               .hero-main p {
-                margin: 0;
+                margin: 0 0 18px;
                 color: var(--muted);
                 line-height: 1.65;
                 position: relative;
                 z-index: 1;
                 max-width: 720px;
               }
-          
+
+              .hero-schedule-wrap {
+                position: relative;
+                z-index: 1;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 18px;
+              }
+
+              .hero-schedule-pill {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 8px 12px;
+                border-radius: 999px;
+                border: 1px solid rgba(79, 25, 225, 0.34);
+                background: rgba(79, 25, 225, 0.16);
+                color: #d2c4ff;
+                font-size: 0.82rem;
+                font-weight: 700;
+                letter-spacing: 0.01em;
+                white-space: nowrap;
+              }
+
+              .hero-schedule-pill-muted {
+                border-color: rgba(189, 212, 255, 0.16);
+                background: rgba(148, 163, 184, 0.08);
+                color: #c1cada;
+              }
+
               .hero-note {
                 margin-top: auto;
                 padding-top: 18px;
@@ -269,41 +389,67 @@ jobs:
                 position: relative;
                 z-index: 1;
               }
-          
+
               .hero-side {
                 padding: 18px;
                 display: grid;
                 gap: 12px;
               }
-          
+
               .meta-card {
                 background: linear-gradient(180deg, rgba(36, 48, 60, 0.92), rgba(27, 33, 41, 0.9));
                 border: 1px solid var(--border);
                 border-radius: 14px;
-                padding: 14px 16px;
+                padding: 16px;
               }
-          
+
+              .meta-card-title {
+                margin: 0 0 12px;
+                color: var(--text);
+                font-size: 0.96rem;
+                font-weight: 800;
+                letter-spacing: 0.01em;
+              }
+
+              .meta-grid {
+                display: grid;
+                gap: 10px;
+              }
+
+              .meta-row {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 12px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid rgba(189, 212, 255, 0.08);
+              }
+
+              .meta-row:last-child {
+                padding-bottom: 0;
+                border-bottom: 0;
+              }
+
               .meta-label {
-                display: block;
-                margin-bottom: 6px;
                 color: var(--muted);
                 font-size: 0.76rem;
                 text-transform: uppercase;
                 letter-spacing: 0.08em;
+                flex: 0 0 auto;
               }
-          
+
               .meta-value {
-                display: block;
                 color: var(--text);
-                font-size: 1rem;
+                font-size: 0.94rem;
                 font-weight: 700;
+                text-align: right;
                 word-break: break-word;
               }
-          
+
               .section-head {
                 margin: 0 0 18px;
               }
-          
+
               .section-head h2 {
                 margin: 0 0 8px;
                 font-size: 1.28rem;
@@ -312,20 +458,20 @@ jobs:
                 font-weight: 800;
                 letter-spacing: 0.01em;
               }
-          
+
               .section-head p {
                 margin: 0;
                 color: #b4c0d0;
                 font-size: 0.96rem;
                 line-height: 1.5;
               }
-          
+
               .grid {
                 display: grid;
                 grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
                 gap: 18px;
               }
-          
+
               .report-card {
                 display: flex;
                 flex-direction: column;
@@ -344,7 +490,7 @@ jobs:
                   box-shadow 0.22s ease,
                   border-color 0.22s ease;
               }
-          
+
               .report-card::before {
                 content: "";
                 position: absolute;
@@ -354,7 +500,7 @@ jobs:
                   linear-gradient(320deg, rgba(239, 127, 63, 0.05), transparent 42%);
                 pointer-events: none;
               }
-          
+
               .report-card:hover {
                 transform: translateY(-5px);
                 border-color: rgba(143, 111, 255, 0.85);
@@ -362,19 +508,19 @@ jobs:
                   0 14px 28px rgba(0, 0, 0, 0.24),
                   0 0 0 1px rgba(79, 25, 225, 0.32);
               }
-          
+
               .report-card:focus-visible {
                 outline: 2px solid var(--glor);
                 outline-offset: 4px;
               }
-          
+
               .card-head,
               .card-body,
               .card-foot {
                 position: relative;
                 z-index: 1;
               }
-          
+
               .card-head {
                 display: flex;
                 align-items: center;
@@ -382,7 +528,7 @@ jobs:
                 gap: 12px;
                 margin-bottom: 18px;
               }
-          
+
               .suite-pill {
                 width: 48px;
                 height: 12px;
@@ -391,36 +537,36 @@ jobs:
                 box-shadow: 0 0 14px rgba(239, 127, 63, 0.30);
                 flex-shrink: 0;
               }
-          
+
               .arrow {
                 color: var(--a4f);
                 font-size: 1.2rem;
                 font-weight: 700;
                 transition: transform 0.22s ease;
               }
-          
+
               .report-card:hover .arrow {
                 transform: translateX(4px);
               }
-          
+
               .card-body {
                 margin-bottom: 20px;
               }
-          
+
               .suite-name {
                 margin: 0;
                 color: var(--text);
                 font-size: 1rem;
                 font-weight: 700;
               }
-          
+
               .card-foot {
                 display: flex;
                 align-items: center;
                 justify-content: flex-end;
                 margin-top: auto;
               }
-          
+
               .open-link {
                 color: #8f6fff;
                 font-weight: 800;
@@ -428,44 +574,52 @@ jobs:
                 letter-spacing: 0.02em;
                 transition: color 0.22s ease;
               }
-          
+
               .report-card:hover .open-link {
                 color: #a88cff;
               }
-          
+
               @media (max-width: 960px) {
                 .hero {
                   grid-template-columns: 1fr;
                 }
               }
-          
+
               @media (max-width: 720px) {
                 .wrap {
                   padding: 20px 14px 32px;
                 }
-          
+
                 .hero-main {
                   padding: 22px;
                 }
-          
+
                 .hero-main h1 {
                   font-size: 1.55rem;
                 }
-          
+
                 .brand {
                   flex-direction: column;
                   align-items: flex-start;
                 }
-          
+
                 .main-logo {
                   height: 38px;
                 }
-          
+
                 .secondary-logo {
                   height: 30px;
                 }
-          
+
                 .hero-note {
+                  text-align: left;
+                }
+
+                .meta-row {
+                  flex-direction: column;
+                }
+
+                .meta-value {
                   text-align: left;
                 }
               }
@@ -483,41 +637,54 @@ jobs:
                       <img class="brand-logo secondary-logo" src="./assets/logo/A4F.png" alt="V&amp;V - Angel4Future" />
                     </div>
                   </div>
-          
+
                   <div class="hero-tag">Project overview</div>
                   <h1>Backend Glor Reporting Dashboard</h1>
                   <p>
                     Hub centralizzato dei report Allure per il <strong>Backend Glor</strong>.
                   </p>
-          
+
+                  <div class="hero-schedule-wrap">
+                    $nextRunsHtml
+                  </div>
+
                   <div class="hero-note">Ref. V&amp;V - Angel4Future</div>
                 </div>
-          
+
                 <div class="hero-side">
                   <div class="meta-card">
-                    <span class="meta-label">Branch</span>
-                    <span class="meta-value">${{ github.ref_name }}</span>
-                  </div>
-                  <div class="meta-card">
-                    <span class="meta-label">Run Number</span>
-                    <span class="meta-value">${{ github.run_number }}</span>
-                  </div>
-                  <div class="meta-card">
-                    <span class="meta-label">Run Type</span>
-                    <span class="meta-value">$runType</span>
-                  </div>
-                  <div class="meta-card">
-                    <span class="meta-label">Run Date</span>
-                    <span class="meta-value">$runDate</span>
+                    <h2 class="meta-card-title">Last run summary</h2>
+                    <div class="meta-grid">
+                      <div class="meta-row">
+                        <span class="meta-label">Branch</span>
+                        <span class="meta-value">${{ github.ref_name }}</span>
+                      </div>
+                      <div class="meta-row">
+                        <span class="meta-label">Run Number</span>
+                        <span class="meta-value">${{ github.run_number }}</span>
+                      </div>
+                      <div class="meta-row">
+                        <span class="meta-label">Run Type</span>
+                        <span class="meta-value">$runType</span>
+                      </div>
+                      <div class="meta-row">
+                        <span class="meta-label">Run Date</span>
+                        <span class="meta-value">$runDate</span>
+                      </div>
+                      <div class="meta-row">
+                        <span class="meta-label">Triggered Schedule</span>
+                        <span class="meta-value">$triggeredScheduleLabel</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
-          
+
               <div class="section-head">
                 <h2>Available Reports</h2>
                 <p>Seleziona una suite per aprire il relativo report.</p>
               </div>
-          
+
               <section class="grid">
                 <a class="report-card" href="./validation/" aria-label="Apri report Validation">
                   <div class="card-head">
@@ -531,7 +698,7 @@ jobs:
                     <span class="open-link">Apri report</span>
                   </div>
                 </a>
-          
+
                 <a class="report-card" href="./non-regression/" aria-label="Apri report Non Regression">
                   <div class="card-head">
                     <span class="suite-pill"></span>
@@ -544,7 +711,7 @@ jobs:
                     <span class="open-link">Apri report</span>
                   </div>
                 </a>
-          
+
                 <a class="report-card" href="./integration/" aria-label="Apri report Integration">
                   <div class="card-head">
                     <span class="suite-pill"></span>
