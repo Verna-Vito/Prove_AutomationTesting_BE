@@ -490,21 +490,20 @@ jobs:
             <div class="wrap">
               <section class="hero">
                 <div class="hero-main">
-          	<div class="brand">
-                  <div class="brand-left">
-                    <img class="brand-logo main-logo" src="./assets/logo/glor-be.svg" alt="Glor BE" />
-                  </div>
-          
-                  <div class="brand-right">
-                    <img class="brand-logo secondary-logo" src="./assets/logo/angel4future.svg" alt="V&amp;V - Angel4Future" />
-                  </div>
+          	      <div class="brand">
+                    <div class="brand-left">
+                      <img class="brand-logo main-logo" src="./assets/logo/glor.png" alt="Glor BE" />
+                    </div>
+                    
+                    <div class="brand-right">
+                      <img class="brand-logo secondary-logo" src="./assets/logo/A4F.png" alt="V&amp;V - Angel4Future" />
+                    </div>
                   </div>
                   <div class="hero-tag">Project overview</div>
                   <h1>Glor BE Reporting Dashboard</h1>
                   <p>
                     Hub centralizzato dei report Allure per il progetto <strong>Glor BE</strong>.
-                    La manutenzione della reportistica è a cura di <strong>Vito</strong> per
-                    <strong>V&amp;V - Angel4Future</strong>.
+                    La manutenzione della reportistica è a cura di <strong>V&amp;V - Angel4Future</strong>.
                   </p>
                 </div>
           
