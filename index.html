@@ -11,9 +11,8 @@
       --panel-soft: #24303c;
       --text: #f6fafe;
       --muted: #94a3b8;
-      --a4f: #EF7F3F;
       --glor: #4F19E1;
-      --blend: #9f4dd0;
+      --a4f: #EF7F3F;
       --border: rgba(189, 212, 255, 0.21);
       --shadow: rgba(0, 0, 0, 0.22);
     }
@@ -27,8 +26,8 @@
       font-family: Arial, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top right, rgba(79, 25, 225, 0.16), transparent 22%),
-        radial-gradient(circle at top left, rgba(239, 127, 63, 0.12), transparent 20%),
+        radial-gradient(circle at top right, rgba(79, 25, 225, 0.14), transparent 22%),
+        radial-gradient(circle at top left, rgba(239, 127, 63, 0.10), transparent 20%),
         linear-gradient(180deg, #2c343f 0%, #26303a 100%);
       min-height: 100vh;
     }
@@ -58,6 +57,9 @@
       padding: 26px;
       position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
     }
 
     .hero-main::before {
@@ -65,8 +67,8 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(135deg, rgba(239, 127, 63, 0.10), transparent 34%),
-        linear-gradient(315deg, rgba(79, 25, 225, 0.10), transparent 42%);
+        linear-gradient(135deg, rgba(79, 25, 225, 0.10), transparent 34%),
+        linear-gradient(315deg, rgba(239, 127, 63, 0.08), transparent 42%);
       pointer-events: none;
     }
 
@@ -90,6 +92,11 @@
     .brand-logo {
       display: block;
       object-fit: contain;
+      border-radius: 14px;
+      overflow: hidden;
+      background: transparent;
+      padding: 0;
+      border: none;
     }
 
     .main-logo {
@@ -99,9 +106,9 @@
     }
 
     .secondary-logo {
-      height: 38px;
+      height: 46px;
       width: auto;
-      max-width: 180px;
+      max-width: 200px;
     }
 
     .hero-tag {
@@ -109,15 +116,16 @@
       margin-bottom: 14px;
       padding: 6px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(239, 127, 63, 0.25);
-      background: rgba(239, 127, 63, 0.10);
-      color: #ffb088;
+      border: 1px solid rgba(79, 25, 225, 0.28);
+      background: rgba(79, 25, 225, 0.12);
+      color: #b8a2ff;
       font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       position: relative;
       z-index: 1;
+      width: fit-content;
     }
 
     .hero-main h1 {
@@ -135,6 +143,18 @@
       position: relative;
       z-index: 1;
       max-width: 720px;
+    }
+
+    .hero-note {
+      margin-top: auto;
+      padding-top: 18px;
+      text-align: right;
+      color: rgba(246, 250, 254, 0.68);
+      font-size: 0.78rem;
+      font-style: italic;
+      letter-spacing: 0.02em;
+      position: relative;
+      z-index: 1;
     }
 
     .hero-side {
@@ -172,14 +192,19 @@
     }
 
     .section-head h2 {
-      margin: 0 0 6px;
-      font-size: 1.1rem;
+      margin: 0 0 8px;
+      font-size: 1.28rem;
+      line-height: 1.2;
+      color: var(--text);
+      font-weight: 800;
+      letter-spacing: 0.01em;
     }
 
     .section-head p {
       margin: 0;
-      color: var(--muted);
-      font-size: 0.92rem;
+      color: #b4c0d0;
+      font-size: 0.96rem;
+      line-height: 1.5;
     }
 
     .grid {
@@ -189,7 +214,8 @@
     }
 
     .report-card {
-      display: block;
+      display: flex;
+      flex-direction: column;
       text-decoration: none;
       color: inherit;
       background: linear-gradient(180deg, rgba(27, 33, 41, 0.98), rgba(36, 48, 60, 0.92));
@@ -211,21 +237,21 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(140deg, rgba(239, 127, 63, 0.08), transparent 36%),
-        linear-gradient(320deg, rgba(79, 25, 225, 0.08), transparent 42%);
+        linear-gradient(140deg, rgba(79, 25, 225, 0.08), transparent 36%),
+        linear-gradient(320deg, rgba(239, 127, 63, 0.05), transparent 42%);
       pointer-events: none;
     }
 
     .report-card:hover {
       transform: translateY(-5px);
-      border-color: rgba(159, 77, 208, 0.55);
+      border-color: rgba(143, 111, 255, 0.85);
       box-shadow:
         0 14px 28px rgba(0, 0, 0, 0.24),
-        0 0 0 1px rgba(159, 77, 208, 0.12);
+        0 0 0 1px rgba(79, 25, 225, 0.32);
     }
 
     .report-card:focus-visible {
-      outline: 2px solid #9f4dd0;
+      outline: 2px solid var(--glor);
       outline-offset: 4px;
     }
 
@@ -248,14 +274,15 @@
       width: 48px;
       height: 12px;
       border-radius: 999px;
-      background: linear-gradient(90deg, #EF7F3F 0%, #4F19E1 100%);
-      box-shadow: 0 0 14px rgba(159, 77, 208, 0.28);
+      background: var(--a4f);
+      box-shadow: 0 0 14px rgba(239, 127, 63, 0.30);
       flex-shrink: 0;
     }
 
     .arrow {
-      color: #c99aff;
+      color: var(--a4f);
       font-size: 1.2rem;
+      font-weight: 700;
       transition: transform 0.22s ease;
     }
 
@@ -268,32 +295,29 @@
     }
 
     .suite-name {
-      margin: 0 0 10px;
+      margin: 0;
       color: var(--text);
       font-size: 1rem;
       font-weight: 700;
     }
 
-    .suite-duration {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-
     .card-foot {
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: flex-end;
       margin-top: auto;
     }
 
     .open-link {
-      font-weight: 700;
-      font-size: 0.94rem;
-      background: linear-gradient(90deg, #EF7F3F 0%, #4F19E1 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
+      color: #8f6fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      letter-spacing: 0.02em;
+      transition: color 0.22s ease;
+    }
+
+    .report-card:hover .open-link {
+      color: #a88cff;
     }
 
     @media (max-width: 960px) {
@@ -327,6 +351,10 @@
       .secondary-logo {
         height: 30px;
       }
+
+      .hero-note {
+        text-align: left;
+      }
     }
   </style>
 </head>
@@ -344,11 +372,12 @@
         </div>
 
         <div class="hero-tag">Project overview</div>
-        <h1>Glor BE Reporting Dashboard</h1>
+        <h1>Backend Glor Reporting Dashboard</h1>
         <p>
-          Hub centralizzato dei report Allure per il progetto <strong>Glor BE</strong>.
-          La manutenzione della reportistica è a cura di <strong>V&amp;V - Angel4Future</strong>.
+          Hub centralizzato dei report Allure per il <strong>Backend Glor</strong>.
         </p>
+
+        <div class="hero-note">Ref. V&amp;V - Angel4Future</div>
       </div>
 
       <div class="hero-side">
@@ -358,7 +387,7 @@
         </div>
         <div class="meta-card">
           <span class="meta-label">Run Number</span>
-          <span class="meta-value">97</span>
+          <span class="meta-value">100</span>
         </div>
         <div class="meta-card">
           <span class="meta-label">Tipo Run</span>
@@ -366,7 +395,7 @@
         </div>
         <div class="meta-card">
           <span class="meta-label">Run Date</span>
-          <span class="meta-value">27/03/2026 22:59:26</span>
+          <span class="meta-value">27/03/2026 23:45</span>
         </div>
       </div>
     </section>
@@ -384,7 +413,6 @@
         </div>
         <div class="card-body">
           <p class="suite-name">Validation</p>
-          <p class="suite-duration">Durata: 8s</p>
         </div>
         <div class="card-foot">
           <span class="open-link">Apri report</span>
@@ -398,7 +426,6 @@
         </div>
         <div class="card-body">
           <p class="suite-name">Non Regression</p>
-          <p class="suite-duration">Durata: 4s</p>
         </div>
         <div class="card-foot">
           <span class="open-link">Apri report</span>
@@ -412,7 +439,6 @@
         </div>
         <div class="card-body">
           <p class="suite-name">Integration</p>
-          <p class="suite-duration">Durata: 4s</p>
         </div>
         <div class="card-foot">
           <span class="open-link">Apri report</span>
