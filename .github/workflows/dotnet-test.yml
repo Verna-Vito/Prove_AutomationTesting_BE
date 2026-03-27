@@ -23,7 +23,7 @@ jobs:
     with:
       suite_name: "Validation"
       report_subpath: "validation"
-      report_title: "BE API Tests - Validation"
+      report_title: "Glor | Backend Test - Validation"
       nunit_where: "cat == 'Validation Test'"
 
   non-regression:
@@ -31,7 +31,7 @@ jobs:
     with:
       suite_name: "Non Regression"
       report_subpath: "non-regression"
-      report_title: "BE API Tests - Non Regression"
+      report_title: "Glor | Backend Test - Non Regression"
       nunit_where: ""
 
   integration:
@@ -39,7 +39,7 @@ jobs:
     with:
       suite_name: "Integration"
       report_subpath: "integration"
-      report_title: "BE API Tests - Integration"
+      report_title: "Glor | Backend Test - Integration"
       nunit_where: "cat == 'Integration Test'"
 
   deploy-pages:
@@ -119,85 +119,6 @@ jobs:
           }
           else {
             $triggeredScheduleLabel = $triggeredSchedule
-          }
-
-          $scheduleDefinitions = @(
-            @{ cron = "0 07 * * *"; label = "07:00"; timezone = "Europe/Rome" },
-            @{ cron = "0 15 * * *"; label = "15:00"; timezone = "Europe/Rome" },
-            @{ cron = "0 23 * * *"; label = "23:00"; timezone = "Europe/Rome" }
-          )
-
-          function Get-NextDailyOccurrence {
-            param(
-              [Parameter(Mandatory = $true)][string]$Cron,
-              [Parameter(Mandatory = $true)][datetime]$NowLocal
-            )
-
-            $parts = $Cron -split "\s+"
-            if ($parts.Count -ne 5) {
-              return $null
-            }
-
-            $minuteExpr = $parts[0]
-            $hourExpr   = $parts[1]
-            $dayExpr    = $parts[2]
-            $monthExpr  = $parts[3]
-            $dowExpr    = $parts[4]
-
-            if ($dayExpr -ne "*" -or $monthExpr -ne "*" -or $dowExpr -ne "*") {
-              return $null
-            }
-
-            if ($minuteExpr -notmatch '^\d{1,2}$' -or $hourExpr -notmatch '^\d{1,2}$') {
-              return $null
-            }
-
-            $minute = [int]$minuteExpr
-            $hour   = [int]$hourExpr
-
-            if ($minute -lt 0 -or $minute -gt 59 -or $hour -lt 0 -or $hour -gt 23) {
-              return $null
-            }
-
-            $candidate = Get-Date -Year $NowLocal.Year -Month $NowLocal.Month -Day $NowLocal.Day -Hour $hour -Minute $minute -Second 0
-
-            if ($candidate -le $NowLocal) {
-              $candidate = $candidate.AddDays(1)
-            }
-
-            return $candidate
-          }
-
-          $nextRuns = New-Object System.Collections.Generic.List[object]
-
-          foreach ($schedule in $scheduleDefinitions) {
-            $next = Get-NextDailyOccurrence -Cron $schedule.cron -NowLocal $romeNow
-            if ($null -ne $next) {
-              $displayValue = "{0} · {1}" -f $next.ToString("dd/MM/yyyy HH:mm"), $schedule.timezone
-
-              $nextRuns.Add([PSCustomObject]@{
-                Cron     = $schedule.cron
-                Label    = $schedule.label
-                Timezone = $schedule.timezone
-                When     = $next
-                Display  = $displayValue
-              })
-            }
-          }
-
-          $nextRuns =
-            $nextRuns |
-            Sort-Object When |
-            Group-Object Display |
-            ForEach-Object { $_.Group[0] }
-
-          $nextRunsHtml = ""
-          foreach ($run in $nextRuns) {
-            $nextRunsHtml += "<span class='hero-schedule-pill' title='Cron: $($run.Cron)'>$($run.Display)</span>`n"
-          }
-
-          if ([string]::IsNullOrWhiteSpace($nextRunsHtml)) {
-            $nextRunsHtml = "<span class='hero-schedule-pill hero-schedule-pill-muted'>No future scheduled run detected</span>"
           }
 
           $html = @"
@@ -348,37 +269,7 @@ jobs:
                       z-index: 1;
                       max-width: 720px;
                   }
-          
-                  .hero-schedule-wrap {
-                      position: relative;
-                      z-index: 1;
-                      display: flex;
-                      flex-wrap: wrap;
-                      gap: 10px;
-                      margin-bottom: 18px;
-                  }
-          
-                  .hero-schedule-pill {
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 8px;
-                      padding: 8px 12px;
-                      border-radius: 999px;
-                      border: 1px solid rgba(79, 25, 225, 0.34);
-                      background: rgba(79, 25, 225, 0.16);
-                      color: #d2c4ff;
-                      font-size: 0.82rem;
-                      font-weight: 700;
-                      letter-spacing: 0.01em;
-                      white-space: nowrap;
-                  }
-          
-                  .hero-schedule-pill-muted {
-                      border-color: rgba(189, 212, 255, 0.16);
-                      background: rgba(148, 163, 184, 0.08);
-                      color: #c1cada;
-                  }
-          
+                  
                   .hero-note {
                       margin-top: auto;
                       padding-top: 18px;
@@ -644,10 +535,6 @@ jobs:
                               Hub centralizzato dei report Allure per il <strong>Backend Glor</strong>.
                           </p>
           
-                          <div class="hero-schedule-wrap">
-                              $nextRunsHtml
-                          </div>
-          
                           <div class="hero-note">Ref. V&amp;V - Angel4Future</div>
                       </div>
           
@@ -672,11 +559,6 @@ jobs:
                           <div class="meta-row">
                               <span class="meta-label">Run Date</span>
                               <span class="meta-value">$runDate</span>
-                          </div>
-          
-                          <div class="meta-row">
-                              <span class="meta-label">Triggered Schedule</span>
-                              <span class="meta-value">$triggeredScheduleLabel</span>
                           </div>
                       </div>
                   </section>
