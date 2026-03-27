@@ -1,2 +1,0 @@
-Invocato endpoint: /onboarding/start
-Timestamp: 2026-03-27T22:49:27.3739888Z
