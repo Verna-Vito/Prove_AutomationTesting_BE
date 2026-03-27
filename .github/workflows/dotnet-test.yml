@@ -3,7 +3,7 @@ name: BE API Tests (NUnit) + Allure 3 Reports + GitHub Pages
 on:
   workflow_dispatch:
   push:
-    branches: [ "master", "develop" ]
+    branches: [ "master" ]
   schedule:
     - cron: '0 07 * * *'
       timezone: 'Europe/Rome'
@@ -121,8 +121,6 @@ jobs:
             $triggeredScheduleLabel = $triggeredSchedule
           }
 
-          # Schedules configurati nel workflow
-          # Questa previsione è calcolata sulle cron giornaliere attuali del workflow.
           $scheduleDefinitions = @(
             @{ cron = "0 07 * * *"; label = "07:00"; timezone = "Europe/Rome" },
             @{ cron = "0 15 * * *"; label = "15:00"; timezone = "Europe/Rome" },
@@ -175,12 +173,14 @@ jobs:
           foreach ($schedule in $scheduleDefinitions) {
             $next = Get-NextDailyOccurrence -Cron $schedule.cron -NowLocal $romeNow
             if ($null -ne $next) {
+              $displayValue = "{0} · {1}" -f $next.ToString("dd/MM/yyyy HH:mm"), $schedule.timezone
+
               $nextRuns.Add([PSCustomObject]@{
                 Cron     = $schedule.cron
                 Label    = $schedule.label
                 Timezone = $schedule.timezone
                 When     = $next
-                Display  = "{0} · {1}" -f $next.ToString("dd/MM/yyyy HH:mm"), $schedule.timezone
+                Display  = $displayValue
               })
             }
           }
@@ -411,22 +411,19 @@ jobs:
                 letter-spacing: 0.01em;
               }
 
-              .meta-grid {
-                display: grid;
-                gap: 10px;
-              }
-
               .meta-row {
                 display: flex;
                 align-items: flex-start;
                 justify-content: space-between;
                 gap: 12px;
                 padding-bottom: 10px;
+                margin-bottom: 10px;
                 border-bottom: 1px solid rgba(189, 212, 255, 0.08);
               }
 
               .meta-row:last-child {
                 padding-bottom: 0;
+                margin-bottom: 0;
                 border-bottom: 0;
               }
 
@@ -654,27 +651,30 @@ jobs:
                 <div class="hero-side">
                   <div class="meta-card">
                     <h2 class="meta-card-title">Last run summary</h2>
-                    <div class="meta-grid">
-                      <div class="meta-row">
-                        <span class="meta-label">Branch</span>
-                        <span class="meta-value">${{ github.ref_name }}</span>
-                      </div>
-                      <div class="meta-row">
-                        <span class="meta-label">Run Number</span>
-                        <span class="meta-value">${{ github.run_number }}</span>
-                      </div>
-                      <div class="meta-row">
-                        <span class="meta-label">Run Type</span>
-                        <span class="meta-value">$runType</span>
-                      </div>
-                      <div class="meta-row">
-                        <span class="meta-label">Run Date</span>
-                        <span class="meta-value">$runDate</span>
-                      </div>
-                      <div class="meta-row">
-                        <span class="meta-label">Triggered Schedule</span>
-                        <span class="meta-value">$triggeredScheduleLabel</span>
-                      </div>
+
+                    <div class="meta-row">
+                      <span class="meta-label">Branch</span>
+                      <span class="meta-value">${{ github.ref_name }}</span>
+                    </div>
+
+                    <div class="meta-row">
+                      <span class="meta-label">Run Number</span>
+                      <span class="meta-value">${{ github.run_number }}</span>
+                    </div>
+
+                    <div class="meta-row">
+                      <span class="meta-label">Run Type</span>
+                      <span class="meta-value">$runType</span>
+                    </div>
+
+                    <div class="meta-row">
+                      <span class="meta-label">Run Date</span>
+                      <span class="meta-value">$runDate</span>
+                    </div>
+
+                    <div class="meta-row">
+                      <span class="meta-label">Triggered Schedule</span>
+                      <span class="meta-value">$triggeredScheduleLabel</span>
                     </div>
                   </div>
                 </div>
