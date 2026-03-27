@@ -11,8 +11,11 @@
       --panel-soft: #24303c;
       --text: #f6fafe;
       --muted: #94a3b8;
-      --accent: #e88d2c;
-      --border: #bdd4ff36;
+      --a4f: #EF7F3F;
+      --glor: #4F19E1;
+      --accent: linear-gradient(90deg, #EF7F3F 0%, #4F19E1 100%);
+      --accent-solid: #9f4dd0;
+      --border: rgba(189, 212, 255, 0.21);
       --shadow: rgba(0, 0, 0, 0.22);
     }
 
@@ -25,7 +28,8 @@
       font-family: Arial, sans-serif;
       color: var(--text);
       background:
-        radial-gradient(circle at top right, rgba(232, 141, 44, 0.08), transparent 20%),
+        radial-gradient(circle at top right, rgba(79, 25, 225, 0.16), transparent 22%),
+        radial-gradient(circle at top left, rgba(239, 127, 63, 0.12), transparent 20%),
         linear-gradient(180deg, #2c343f 0%, #26303a 100%);
       min-height: 100vh;
     }
@@ -34,92 +38,6 @@
       max-width: 1100px;
       margin: 0 auto;
       padding: 32px 20px 40px;
-    }
-
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 22px;
-      padding: 14px 18px;
-      background: rgba(27, 33, 41, 0.78);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      backdrop-filter: blur(6px);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      width: 100%;
-      min-width: 0;
-    }
-
-    .brand-left {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 0;
-    }
-
-    .brand-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-
-    .brand-logo {
-      display: block;
-      object-fit: contain;
-    }
-
-    .main-logo {
-      height: 34px;
-      width: auto;
-      max-width: 140px;
-    }
-
-    .secondary-logo {
-      height: 28px;
-      width: auto;
-      max-width: 140px;
-    }
-
-    .brand-title {
-      margin: 0;
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.2px;
-    }
-
-    .brand-subtitle {
-      margin: 2px 0 0;
-      color: var(--muted);
-      font-size: 0.86rem;
-    }
-
-    .maintainer-label {
-      color: var(--muted);
-      font-size: 0.8rem;
-      white-space: nowrap;
-    }
-
-    .run-chip {
-      display: inline-flex;
-      align-items: center;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(232, 141, 44, 0.25);
-      background: rgba(232, 141, 44, 0.1);
-      color: var(--accent);
-      font-size: 0.85rem;
-      font-weight: 700;
-      white-space: nowrap;
-      flex-shrink: 0;
     }
 
     .hero {
@@ -131,7 +49,7 @@
 
     .hero-main,
     .hero-side {
-      background: rgba(27, 33, 41, 0.88);
+      background: rgba(27, 33, 41, 0.9);
       border: 1px solid var(--border);
       border-radius: 18px;
       box-shadow: 0 10px 28px var(--shadow);
@@ -148,9 +66,43 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(135deg, rgba(232, 141, 44, 0.06), transparent 36%),
-        linear-gradient(315deg, rgba(189, 212, 255, 0.03), transparent 40%);
+        linear-gradient(135deg, rgba(239, 127, 63, 0.10), transparent 34%),
+        linear-gradient(315deg, rgba(79, 25, 225, 0.10), transparent 42%);
       pointer-events: none;
+    }
+
+    .brand {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+      width: 100%;
+    }
+
+    .brand-left,
+    .brand-right {
+      display: flex;
+      align-items: center;
+    }
+
+    .brand-logo {
+      display: block;
+      object-fit: contain;
+    }
+
+    .main-logo {
+      height: 46px;
+      width: auto;
+      max-width: 200px;
+    }
+
+    .secondary-logo {
+      height: 38px;
+      width: auto;
+      max-width: 180px;
     }
 
     .hero-tag {
@@ -158,9 +110,9 @@
       margin-bottom: 14px;
       padding: 6px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(232, 141, 44, 0.2);
-      background: rgba(232, 141, 44, 0.08);
-      color: var(--accent);
+      border: 1px solid rgba(239, 127, 63, 0.25);
+      background: rgba(239, 127, 63, 0.10);
+      color: #ffb088;
       font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
@@ -193,7 +145,7 @@
     }
 
     .meta-card {
-      background: linear-gradient(180deg, rgba(36, 48, 60, 0.88), rgba(27, 33, 41, 0.88));
+      background: linear-gradient(180deg, rgba(36, 48, 60, 0.92), rgba(27, 33, 41, 0.9));
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 14px 16px;
@@ -245,7 +197,7 @@
       border: 1px solid var(--border);
       border-radius: 18px;
       padding: 22px;
-      min-height: 170px;
+      min-height: 180px;
       position: relative;
       overflow: hidden;
       box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
@@ -260,27 +212,27 @@
       position: absolute;
       inset: 0;
       background:
-        linear-gradient(140deg, rgba(232, 141, 44, 0.05), transparent 38%),
-        linear-gradient(320deg, rgba(189, 212, 255, 0.03), transparent 42%);
+        linear-gradient(140deg, rgba(239, 127, 63, 0.08), transparent 36%),
+        linear-gradient(320deg, rgba(79, 25, 225, 0.08), transparent 42%);
       pointer-events: none;
     }
 
     .report-card:hover {
       transform: translateY(-5px);
-      border-color: rgba(232, 141, 44, 0.4);
+      border-color: rgba(159, 77, 208, 0.55);
       box-shadow:
         0 14px 28px rgba(0, 0, 0, 0.24),
-        0 0 0 1px rgba(232, 141, 44, 0.08);
+        0 0 0 1px rgba(159, 77, 208, 0.12);
     }
 
     .report-card:focus-visible {
-      outline: 2px solid var(--accent);
+      outline: 2px solid #9f4dd0;
       outline-offset: 4px;
     }
 
     .card-head,
-    .card-foot,
-    .report-card h3 {
+    .card-body,
+    .card-foot {
       position: relative;
       z-index: 1;
     }
@@ -293,31 +245,17 @@
       margin-bottom: 18px;
     }
 
-    .suite-type {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
+    .suite-pill {
+      width: 48px;
+      height: 12px;
       border-radius: 999px;
-      background: rgba(232, 141, 44, 0.08);
-      border: 1px solid rgba(232, 141, 44, 0.18);
-      color: var(--accent);
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
-
-    .suite-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 10px rgba(232, 141, 44, 0.35);
+      background: linear-gradient(90deg, #EF7F3F 0%, #4F19E1 100%);
+      box-shadow: 0 0 14px rgba(159, 77, 208, 0.28);
+      flex-shrink: 0;
     }
 
     .arrow {
-      color: var(--accent);
+      color: #c99aff;
       font-size: 1.2rem;
       transition: transform 0.22s ease;
     }
@@ -326,29 +264,37 @@
       transform: translateX(4px);
     }
 
-    .report-card h3 {
-      margin: 0 0 22px;
-      font-size: 1.22rem;
+    .card-body {
+      margin-bottom: 20px;
+    }
+
+    .suite-name {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 1rem;
       font-weight: 700;
+    }
+
+    .suite-duration {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
     }
 
     .card-foot {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content: flex-start;
       margin-top: auto;
     }
 
     .open-link {
-      color: var(--accent);
       font-weight: 700;
       font-size: 0.94rem;
-    }
-
-    .path {
-      color: var(--muted);
-      font-size: 0.82rem;
+      background: linear-gradient(90deg, #EF7F3F 0%, #4F19E1 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
 
     @media (max-width: 960px) {
@@ -362,20 +308,6 @@
         padding: 20px 14px 32px;
       }
 
-      .topbar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .brand {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .brand-right {
-        margin-top: 4px;
-      }
-
       .hero-main {
         padding: 22px;
       }
@@ -384,12 +316,17 @@
         font-size: 1.55rem;
       }
 
+      .brand {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
       .main-logo {
-        height: 30px;
+        height: 38px;
       }
 
       .secondary-logo {
-        height: 24px;
+        height: 30px;
       }
     }
   </style>
@@ -398,15 +335,15 @@
   <div class="wrap">
     <section class="hero">
       <div class="hero-main">
-	      <div class="brand">
+        <div class="brand">
           <div class="brand-left">
             <img class="brand-logo main-logo" src="./assets/logo/glor.png" alt="Glor BE" />
           </div>
-          
           <div class="brand-right">
             <img class="brand-logo secondary-logo" src="./assets/logo/A4F.png" alt="V&amp;V - Angel4Future" />
           </div>
         </div>
+
         <div class="hero-tag">Project overview</div>
         <h1>Glor BE Reporting Dashboard</h1>
         <p>
@@ -422,7 +359,7 @@
         </div>
         <div class="meta-card">
           <span class="meta-label">Run Number</span>
-          <span class="meta-value">94</span>
+          <span class="meta-value">95</span>
         </div>
         <div class="meta-card">
           <span class="meta-label">Tipo Run</span>
@@ -430,7 +367,7 @@
         </div>
         <div class="meta-card">
           <span class="meta-label">Run Date</span>
-          <span class="meta-value">27/03/2026 22:38:18</span>
+          <span class="meta-value">27/03/2026 22:54:32</span>
         </div>
       </div>
     </section>
@@ -443,10 +380,13 @@
     <section class="grid">
       <a class="report-card" href="./validation/" aria-label="Apri report Validation">
         <div class="card-head">
-          <span class="suite-type"><span class="suite-dot"></span> Validation</span>
+          <span class="suite-pill"></span>
           <span class="arrow">→</span>
         </div>
-        <h3>Validation</h3>
+        <div class="card-body">
+          <p class="suite-name">Validation</p>
+          <p class="suite-duration">Durata: n/d</p>
+        </div>
         <div class="card-foot">
           <span class="open-link">Apri report</span>
         </div>
@@ -454,10 +394,13 @@
 
       <a class="report-card" href="./non-regression/" aria-label="Apri report Non Regression">
         <div class="card-head">
-          <span class="suite-type"><span class="suite-dot"></span> Non Regression</span>
+          <span class="suite-pill"></span>
           <span class="arrow">→</span>
         </div>
-        <h3>Non Regression</h3>
+        <div class="card-body">
+          <p class="suite-name">Non Regression</p>
+          <p class="suite-duration">Durata: n/d</p>
+        </div>
         <div class="card-foot">
           <span class="open-link">Apri report</span>
         </div>
@@ -465,10 +408,13 @@
 
       <a class="report-card" href="./integration/" aria-label="Apri report Integration">
         <div class="card-head">
-          <span class="suite-type"><span class="suite-dot"></span> Integration</span>
+          <span class="suite-pill"></span>
           <span class="arrow">→</span>
         </div>
-        <h3>Integration</h3>
+        <div class="card-body">
+          <p class="suite-name">Integration</p>
+          <p class="suite-duration">Durata: n/d</p>
+        </div>
         <div class="card-foot">
           <span class="open-link">Apri report</span>
         </div>
