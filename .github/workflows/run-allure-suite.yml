@@ -138,27 +138,6 @@ jobs:
 
           dotnet @args
 
-          $suiteEnd = Get-Date
-          $duration = $suiteEnd - $suiteStart
-
-          $totalSeconds = [math]::Floor($duration.TotalSeconds)
-          $hours = [math]::Floor($totalSeconds / 3600)
-          $minutes = [math]::Floor(($totalSeconds % 3600) / 60)
-          $seconds = $totalSeconds % 60
-
-          if ($hours -gt 0) {
-            $durationHuman = "{0}h {1}m {2}s" -f $hours, $minutes, $seconds
-          }
-          elseif ($minutes -gt 0) {
-            $durationHuman = "{0}m {1}s" -f $minutes, $seconds
-          }
-          else {
-            $durationHuman = "{0}s" -f $seconds
-          }
-
-          "duration_seconds=$totalSeconds" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "duration_human=$durationHuman" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
       - name: Capture results
         shell: pwsh
         if: ${{ !cancelled() }}
@@ -249,32 +228,6 @@ jobs:
             $content = $content -replace '<title>Allure Report</title>', "<title>$browserTitle</title>"
             Set-Content -Path $indexPath -Value $content -Encoding utf8
           }
-
-      - name: Create suite metadata
-        shell: pwsh
-        if: ${{ !cancelled() }}
-        run: |
-          $metaDir = ".\suite-meta\${{ inputs.report_subpath }}"
-          New-Item -ItemType Directory -Force -Path $metaDir | Out-Null
-
-          $meta = @{
-            suite_name = "${{ inputs.suite_name }}"
-            report_subpath = "${{ inputs.report_subpath }}"
-            duration_seconds = "${{ steps.run_tests.outputs.duration_seconds }}"
-            duration_human = "${{ steps.run_tests.outputs.duration_human }}"
-            run_number = "${{ github.run_number }}"
-            run_id = "${{ github.run_id }}"
-            branch = "${{ github.ref_name }}"
-          } | ConvertTo-Json -Depth 10
-
-          Set-Content -Path "$metaDir\suite-meta.json" -Value $meta -Encoding utf8
-
-      - name: Upload suite metadata artifact
-        uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() && hashFiles(format('suite-meta/{0}/suite-meta.json', inputs.report_subpath)) != '' }}
-        with:
-          name: allure-meta-${{ inputs.report_subpath }}
-          path: suite-meta/${{ inputs.report_subpath }}/suite-meta.json
 
       - name: Upload report artifact
         uses: actions/upload-artifact@v4
