@@ -79,8 +79,7 @@ jobs:
       - name: Create Pages landing page
         shell: pwsh
         run: |
-          $romeTz = [System.TimeZoneInfo]::FindSystemTimeZoneById("W. Europe Standard Time")
-          $romeNow = [System.TimeZoneInfo]::ConvertTimeFromUtc((Get-Date).ToUniversalTime(), $romeTz)
+          $romeNow = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId((Get-Date), "W. Europe Standard Time")
           $runDate = $romeNow.ToString("dd/MM/yyyy HH:mm:ss")
 
           switch ("${{ github.event_name }}") {
@@ -94,36 +93,369 @@ jobs:
           <!DOCTYPE html>
           <html lang="it">
           <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
             <title>BE API Test Reports</title>
             <style>
-              body { font-family: Arial, sans-serif; background: #2c343f; color: #f6fafe; margin: 0; padding: 40px; }
-              .wrap { max-width: 900px; margin: 0 auto; }
-              h1 { margin-bottom: 8px; }
-              p { color: #94a3b8; }
-              .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 32px; }
-              .card { background: #1b2129; border: 1px solid #bdd4ff36; border-radius: 8px; padding: 24px; }
-              a { display: inline-block; margin-top: 16px; color: #e88d2c; text-decoration: none; font-weight: bold; }
+              :root {
+                --bg: #2c343f;
+                --surface: #1b2129;
+                --surface-2: #24303c;
+                --text: #f6fafe;
+                --muted: #94a3b8;
+                --accent: #e88d2c;
+                --border: #bdd4ff36;
+                --shadow: rgba(0, 0, 0, 0.24);
+              }
+
+              * {
+                box-sizing: border-box;
+              }
+
+              html {
+                scroll-behavior: smooth;
+              }
+
+              body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background:
+                  radial-gradient(circle at top left, rgba(232, 141, 44, 0.08), transparent 18%),
+                  radial-gradient(circle at top right, rgba(189, 212, 255, 0.06), transparent 20%),
+                  var(--bg);
+                color: var(--text);
+                padding: 40px 24px;
+              }
+
+              .wrap {
+                max-width: 1100px;
+                margin: 0 auto;
+              }
+
+              .hero {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 24px;
+                margin-bottom: 32px;
+                padding: 28px;
+                background: linear-gradient(145deg, rgba(27, 33, 41, 0.95), rgba(36, 48, 60, 0.90));
+                border: 1px solid var(--border);
+                border-radius: 18px;
+                box-shadow: 0 10px 30px var(--shadow);
+              }
+
+              .hero-left {
+                flex: 1 1 480px;
+              }
+
+              .hero h1 {
+                margin: 0 0 10px;
+                font-size: 2rem;
+                line-height: 1.1;
+                letter-spacing: 0.2px;
+              }
+
+              .hero p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.98rem;
+                line-height: 1.6;
+                max-width: 700px;
+              }
+
+              .meta-panel {
+                flex: 0 1 320px;
+                display: grid;
+                gap: 12px;
+                min-width: 280px;
+              }
+
+              .meta-card {
+                background: rgba(27, 33, 41, 0.9);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 16px 18px;
+              }
+
+              .meta-label {
+                display: block;
+                font-size: 0.78rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                color: var(--muted);
+                margin-bottom: 6px;
+              }
+
+              .meta-value {
+                font-size: 1rem;
+                font-weight: bold;
+                color: var(--text);
+                word-break: break-word;
+              }
+
+              .section-title {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                margin: 20px 0 18px;
+              }
+
+              .section-title h2 {
+                margin: 0;
+                font-size: 1.2rem;
+                letter-spacing: 0.2px;
+              }
+
+              .section-title span {
+                color: var(--muted);
+                font-size: 0.92rem;
+              }
+
+              .grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 22px;
+              }
+
+              .report-card {
+                display: block;
+                text-decoration: none;
+                color: inherit;
+                background: linear-gradient(180deg, rgba(27, 33, 41, 0.96), rgba(27, 33, 41, 0.88));
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 22px;
+                min-height: 220px;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+                transition:
+                  transform 0.25s ease,
+                  box-shadow 0.25s ease,
+                  border-color 0.25s ease,
+                  background 0.25s ease;
+              }
+
+              .report-card::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                  135deg,
+                  rgba(232, 141, 44, 0.06),
+                  transparent 35%,
+                  rgba(189, 212, 255, 0.04)
+                );
+                pointer-events: none;
+                opacity: 0.9;
+              }
+
+              .report-card:hover {
+                transform: translateY(-6px) scale(1.01);
+                border-color: rgba(232, 141, 44, 0.45);
+                box-shadow:
+                  0 14px 30px rgba(0, 0, 0, 0.28),
+                  0 0 0 1px rgba(232, 141, 44, 0.08);
+              }
+
+              .report-card:focus-visible {
+                outline: 2px solid var(--accent);
+                outline-offset: 4px;
+              }
+
+              .card-top {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                margin-bottom: 18px;
+                position: relative;
+                z-index: 1;
+              }
+
+              .card-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 6px 10px;
+                border-radius: 999px;
+                font-size: 0.78rem;
+                font-weight: bold;
+                letter-spacing: 0.03em;
+                background: rgba(232, 141, 44, 0.12);
+                color: var(--accent);
+                border: 1px solid rgba(232, 141, 44, 0.22);
+              }
+
+              .card-arrow {
+                font-size: 1.3rem;
+                color: var(--accent);
+                transition: transform 0.25s ease;
+              }
+
+              .report-card:hover .card-arrow {
+                transform: translateX(4px);
+              }
+
+              .report-card h3 {
+                margin: 0 0 10px;
+                font-size: 1.35rem;
+                position: relative;
+                z-index: 1;
+              }
+
+              .report-card p {
+                margin: 0 0 18px;
+                color: var(--muted);
+                line-height: 1.55;
+                font-size: 0.96rem;
+                position: relative;
+                z-index: 1;
+              }
+
+              .card-footer {
+                margin-top: auto;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                position: relative;
+                z-index: 1;
+              }
+
+              .card-link-text {
+                color: var(--accent);
+                font-weight: bold;
+                font-size: 0.95rem;
+              }
+
+              .card-meta {
+                color: var(--muted);
+                font-size: 0.84rem;
+              }
+
+              .footer-note {
+                margin-top: 28px;
+                padding: 18px 20px;
+                background: rgba(27, 33, 41, 0.72);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                color: var(--muted);
+                font-size: 0.92rem;
+                line-height: 1.5;
+              }
+
+              @media (max-width: 720px) {
+                body {
+                  padding: 24px 16px;
+                }
+
+                .hero {
+                  padding: 22px;
+                }
+
+                .hero h1 {
+                  font-size: 1.65rem;
+                }
+
+                .report-card {
+                  min-height: 200px;
+                }
+              }
             </style>
           </head>
           <body>
             <div class="wrap">
-              <h1>BE API Test Reports</h1>
-              <p>Branch: ${{ github.ref_name }} | Run: ${{ github.run_number }} | Tipo: <b>$runType</b> | Run at: <b>$runDate</b></p>
-              <div class="grid">
-                <div class="card">
-                  <h2>Validation</h2>
-                  <a href="./validation/">Apri report Validation</a>
+              <section class="hero">
+                <div class="hero-left">
+                  <h1>BE API Test Reports</h1>
+                  <p>
+                    Dashboard dei report generati dalla pipeline di test backend.
+                    Da qui puoi accedere rapidamente ai risultati dei test di Validation,
+                    Non Regression e Integration, con riferimento diretto al branch e al run corrente.
+                  </p>
                 </div>
-                <div class="card">
-                  <h2>Non Regression</h2>
-                  <a href="./non-regression/">Apri report Non Regression</a>
+
+                <div class="meta-panel">
+                  <div class="meta-card">
+                    <span class="meta-label">Branch</span>
+                    <span class="meta-value">${{ github.ref_name }}</span>
+                  </div>
+                  <div class="meta-card">
+                    <span class="meta-label">Run Number</span>
+                    <span class="meta-value">${{ github.run_number }}</span>
+                  </div>
+                  <div class="meta-card">
+                    <span class="meta-label">Tipo Run</span>
+                    <span class="meta-value">$runType</span>
+                  </div>
+                  <div class="meta-card">
+                    <span class="meta-label">Run Date</span>
+                    <span class="meta-value">$runDate</span>
+                  </div>
                 </div>
-                <div class="card">
-                  <h2>Integration</h2>
-                  <a href="./integration/">Apri report Integration</a>
-                </div>
+              </section>
+
+              <div class="section-title">
+                <h2>Available Reports</h2>
+                <span>Seleziona una sezione per aprire il relativo report</span>
+              </div>
+
+              <section class="grid">
+                <a class="report-card" href="./validation/" aria-label="Apri report Validation">
+                  <div class="card-top">
+                    <span class="card-badge">Validation Suite</span>
+                    <span class="card-arrow">→</span>
+                  </div>
+                  <h3>Validation</h3>
+                  <p>
+                    Report dedicato ai controlli di validazione delle API backend.
+                    Utile per verificare comportamento atteso, vincoli e correttezza delle risposte.
+                  </p>
+                  <div class="card-footer">
+                    <span class="card-link-text">Apri report</span>
+                    <span class="card-meta">./validation/</span>
+                  </div>
+                </a>
+
+                <a class="report-card" href="./non-regression/" aria-label="Apri report Non Regression">
+                  <div class="card-top">
+                    <span class="card-badge">Regression Suite</span>
+                    <span class="card-arrow">→</span>
+                  </div>
+                  <h3>Non Regression</h3>
+                  <p>
+                    Report dedicato ai test di non regressione per intercettare impatti collaterali
+                    e rotture introdotte dalle ultime modifiche sul backend.
+                  </p>
+                  <div class="card-footer">
+                    <span class="card-link-text">Apri report</span>
+                    <span class="card-meta">./non-regression/</span>
+                  </div>
+                </a>
+
+                <a class="report-card" href="./integration/" aria-label="Apri report Integration">
+                  <div class="card-top">
+                    <span class="card-badge">Integration Suite</span>
+                    <span class="card-arrow">→</span>
+                  </div>
+                  <h3>Integration</h3>
+                  <p>
+                    Report dedicato ai test di integrazione tra componenti, servizi e flussi backend,
+                    utile per verificare la coerenza end-to-end del sistema.
+                  </p>
+                  <div class="card-footer">
+                    <span class="card-link-text">Apri report</span>
+                    <span class="card-meta">./integration/</span>
+                  </div>
+                </a>
+              </section>
+
+              <div class="footer-note">
+                Questa dashboard raccoglie i report pubblicati dal run corrente della pipeline.
+                La struttura è estendibile facilmente con nuove sezioni future mantenendo la stessa veste grafica.
               </div>
             </div>
           </body>
