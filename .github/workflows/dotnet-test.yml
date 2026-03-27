@@ -104,9 +104,9 @@ jobs:
           $runDate = $romeNow.ToString("dd/MM/yyyy HH:mm")
 
           switch ("${{ github.event_name }}") {
-            "schedule" { $runType = "schedulata" }
-            "workflow_dispatch" { $runType = "manuale" }
-            "push" { $runType = "push" }
+            "schedule" { $runType = "Scheduled" }
+            "workflow_dispatch" { $runType = "Manual" }
+            "push" { $runType = "Push" }
             default { $runType = "${{ github.event_name }}" }
           }
 
@@ -503,7 +503,7 @@ jobs:
                     <span class="meta-value">${{ github.run_number }}</span>
                   </div>
                   <div class="meta-card">
-                    <span class="meta-label">Tipo Run</span>
+                    <span class="meta-label">Run Type</span>
                     <span class="meta-value">$runType</span>
                   </div>
                   <div class="meta-card">
@@ -525,7 +525,7 @@ jobs:
                     <span class="arrow">→</span>
                   </div>
                   <div class="card-body">
-                    <p class="suite-name">Validation</p>
+                    <p class="suite-name">Validazione</p>
                   </div>
                   <div class="card-foot">
                     <span class="open-link">Apri report</span>
@@ -538,7 +538,7 @@ jobs:
                     <span class="arrow">→</span>
                   </div>
                   <div class="card-body">
-                    <p class="suite-name">Non Regression</p>
+                    <p class="suite-name">Non Regressione</p>
                   </div>
                   <div class="card-foot">
                     <span class="open-link">Apri report</span>
@@ -551,7 +551,7 @@ jobs:
                     <span class="arrow">→</span>
                   </div>
                   <div class="card-body">
-                    <p class="suite-name">Integration</p>
+                    <p class="suite-name">Integrazione</p>
                   </div>
                   <div class="card-foot">
                     <span class="open-link">Apri report</span>
