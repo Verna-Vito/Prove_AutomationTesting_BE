@@ -153,8 +153,7 @@ jobs:
                 --muted: #94a3b8;
                 --a4f: #EF7F3F;
                 --glor: #4F19E1;
-                --accent: linear-gradient(90deg, #EF7F3F 0%, #4F19E1 100%);
-                --accent-solid: #9f4dd0;
+                --blend: #9f4dd0;
                 --border: rgba(189, 212, 255, 0.21);
                 --shadow: rgba(0, 0, 0, 0.22);
               }
