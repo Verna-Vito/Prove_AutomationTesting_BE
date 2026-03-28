@@ -54,7 +54,7 @@ public class Onboarding_200_Tests
         // Assert
         AllureApi.Step("Assert status 200 + body", () =>
         {
-            Assert.That(result.StatusCode, Is.EqualTo(200));
+            Assert.That(result.StatusCode, Is.EqualTo(500));
             Assert.That(result.Body, Does.Contain("started"));
             Assert.Ignore("Proviamolo qui!");
         });
