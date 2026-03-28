@@ -1,1 +1,0 @@
-Questo test deve fallire per mostrare il report Allure con attachment.
